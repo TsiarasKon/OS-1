@@ -78,6 +78,19 @@ int main(int argc, char *argv[]) {
 
         } else if (!strcmp(command, "t")) {
 
+        } else if (!strcmp(command, "h")) {         // bouns: h(elp) command
+            cout << "Available commands (use without quotes):" << endl;
+            cout << " 'i Ni' - insert a new node Ni" << endl;
+            cout << " 'n Ni Nj w' - insert a new edge from Ni to Nj with weight w" << endl;
+            cout << " 'd Ni' - delete node Ni (as well as all its edges)" << endl;
+            cout << " 'l Ni Nj [w]' - delete an edge from Ni to Nj with weight w;" << endl
+                    << " \tif w is not provided then delete all such edges regardless of weight" << endl;
+            cout << " 'm Ni Nj w nw' - modify an edge from Ni to Nj with weight w to have weight nw" << endl;
+            cout << " 'r Ni' - print all incoming transactions to node Ni" << endl;
+            cout << " 'c Ni' - print all simple cycles in which Ni appears" << endl;
+            cout << " 'f Ni k' - print all simple cycles in which Ni appears and each edge has at least weight k" << endl;
+            cout << " 't Ni Nj l' - print all possible transaction flows from Ni to Nj traversing at most l edges" << endl;
+            cout << " 'e' - save the graph to a file and exit the program" << endl;
         } else if (!strcmp(command, "e")) {
             // TODO: Save graph to outputfile
             // TODO: Free all the memory!
@@ -87,7 +100,7 @@ int main(int argc, char *argv[]) {
             cout << "Program completed successfully." << endl;
             return EC_OK;
         } else {
-            cout << "Unknown command" << endl;
+            cout << "Unknown command - Type \"h\" for a list of available commands" << endl;
         }
         buffer = bufferptr;     // used to avoid leaks due to strtok
         cout << "Type a command:" << endl;
