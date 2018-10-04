@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <fstream>
 #include "util.h"
+#include "lists.h"
 
 using namespace std;
 
@@ -21,7 +22,7 @@ int main(int argc, char *argv[]) {
                 try {
                     inputfilename = new char[strlen(optarg) + 1];
                 } catch (bad_alloc& e) {
-                    cerr << "Error: " << e.what() << endl;
+                    cerr << __func__ << ": " << e.what() << endl;
                     delete[] outputfilename;
                     return EC_MEM;
                 }
@@ -31,7 +32,7 @@ int main(int argc, char *argv[]) {
                 try {
                     outputfilename = new char[strlen(optarg) + 1];
                 } catch (bad_alloc& e) {
-                    cerr << "Error: " << e.what() << endl;
+                    cerr << __func__ << ": " << e.what() << endl;
                     delete[] inputfilename;
                     return EC_MEM;
                 }
@@ -50,12 +51,32 @@ int main(int argc, char *argv[]) {
         return EC_ARG;
     }
 
+    NodeList *graph;
+    try {
+        graph = new NodeList();
+    } catch (bad_alloc&) {
+        delete[] inputfilename;
+        delete[] outputfilename;
+        return EC_MEM;
+    }
+//    graph->insertInOrder("der");
+//    graph->insertInOrder("a1234");
+//    graph->insertInOrder("gg");
+//    graph->insertInOrder("z5h");
+//    graph->insertInOrder("jerh5h");
+//    graph->insertInOrder("z5h");
+//    graph->insertInOrder("62345tmsoi5h");
+//    graph->print();
+
     // Load graph from inputfile
     ifstream inputfile;
     inputfile.open(inputfilename);
     if (!inputfile) {
-        inputfile.close();      // TODO should this stay?
-        cerr << "Failed to open inputfile." << endl;
+        inputfile.close();
+        cout << "Failed to open inputfile." << endl;
+        delete[] inputfilename;
+        delete[] outputfilename;
+        delete graph;
         return EC_FILE;
     }
     size_t bufsize;

@@ -8,7 +8,7 @@ class EdgeList {
         char *receivingNodeName;
         int weight;
         EdgeListnode *nextEdge;
-        EdgeListnode(char *receivingNodeName, int weight);
+        EdgeListnode(char *receivingNodeName, int weight, EdgeListnode *nextEdge);
         ~EdgeListnode();
     };
 
@@ -26,7 +26,7 @@ class NodeList {
         char *nodeName;
         EdgeList *edges;
         NodeListnode *nextNode;
-        NodeListnode(char *nodeName, EdgeList *edges);
+        NodeListnode(char *nodeName, NodeListnode *nextNode);
         ~NodeListnode();
     };
 
@@ -35,6 +35,9 @@ class NodeList {
 public:
     NodeList();
     ~NodeList();
+    bool insertInOrder(char *nodeName);
+
+    void print() const;
 };
 
 #endif
