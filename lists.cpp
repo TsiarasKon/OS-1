@@ -35,6 +35,14 @@ EdgeList::~EdgeList() {
     }
 }
 
+void EdgeList::print() const {
+    EdgeListnode *current = firstEdge;
+    while (current != NULL) {
+        cout << " >" << current->receivingNodeName << "(" << current->weight << ")";
+    }
+    cout << " >/" << endl;
+}
+
 
 // NodeListNode methods:
 NodeList::NodeListnode::NodeListnode(char *nodeName, NodeListnode *nextNode) :
@@ -51,6 +59,7 @@ NodeList::NodeListnode::NodeListnode(char *nodeName, NodeListnode *nextNode) :
 }
 
 NodeList::NodeListnode::~NodeListnode() {
+    delete edges;
     delete[] nodeName;
 }
 
@@ -74,13 +83,13 @@ bool NodeList::insertInOrder(char *nodeName) {
             prev = current;
             current = current->nextNode;
         }
-        if (current == firstNode) {     // insert at start
+        if (current == firstNode && (current == NULL || strcmp(current->nodeName, nodeName) != 0)) {     // insert at start
             firstNode = new NodeListnode(nodeName, firstNode);
             return true;
         }
         if (current != NULL) {
             if (strcmp(current->nodeName, nodeName) == 0) {
-                cout << "Warning: Attempted to insert node with a name that already exists!" << endl;
+//                cout << "Warning: Attempted to insert node with a name that already exists!" << endl;
                 return false;
             } else {        // just surpassed where the node would have been found, if it existed
                 prev->nextNode = new NodeListnode(nodeName, current);
@@ -93,12 +102,37 @@ bool NodeList::insertInOrder(char *nodeName) {
     } catch (bad_alloc&) { throw; }
 }
 
+bool NodeList::deleteNode(char *nodeName) {
+    if (firstNode == NULL) return false;        // if list is empty
+    NodeListnode *current = firstNode, *prev = firstNode;
+    while (current != NULL && strcmp(current->nodeName, nodeName) < 0) {
+        prev = current;
+        current = current->nextNode;
+    }
+    // if reached end of list or surpassed node assumed position
+    if (current == NULL || strcmp(current->nodeName, nodeName) != 0) {
+//        cout << "Warning: Node not found!" << endl;
+        return false;
+    }
+    if (strcmp(current->nodeName, nodeName) == 0) {     // node found
+        if (current == firstNode) {
+            firstNode = current->nextNode;
+        } else {
+            prev->nextNode = current->nextNode;
+        }
+        delete current;
+        return true;
+    }
+
+}
+
 void NodeList::print() const {
     NodeListnode *current = firstNode;
     while (current != NULL) {
-        cout << current->nodeName << endl;
+        cout << current->nodeName;
+        current->edges->print();
         current = current->nextNode;
     }
-    cout << '/';
+    cout << '/' << endl;
 }
 

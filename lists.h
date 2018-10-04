@@ -17,6 +17,8 @@ class EdgeList {
 public:
     EdgeList();
     ~EdgeList();
+
+    void print() const;
 };
 
 class NodeList {
@@ -36,6 +38,7 @@ public:
     NodeList();
     ~NodeList();
     bool insertInOrder(char *nodeName);
+    bool deleteNode(char *nodeName);
 
     void print() const;
 };
