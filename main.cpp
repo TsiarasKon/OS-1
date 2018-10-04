@@ -2,6 +2,7 @@
 #include <getopt.h>
 #include <cstring>
 #include <cstdio>
+#include <fstream>
 #include "util.h"
 
 using namespace std;
@@ -12,47 +13,63 @@ int main(int argc, char *argv[]) {
         cout << argErrorMsg;
         return EC_ARG;
     }
-    char *inputfile = NULL, *outputfile = NULL;
+    char *inputfilename = NULL, *outputfilename = NULL;
     int option;
     while ((option = getopt(argc, argv,"i:o:")) != -1) {
         switch (option) {
             case 'i' :
                 try {
-                    inputfile = new char[strlen(optarg) + 1];
-                } catch (bad_alloc& error) {
-                    cerr << "Error: " << error.what() << endl;
-                    delete[] outputfile;
+                    inputfilename = new char[strlen(optarg) + 1];
+                } catch (bad_alloc& e) {
+                    cerr << "Error: " << e.what() << endl;
+                    delete[] outputfilename;
                     return EC_MEM;
                 }
-                strcpy(inputfile, optarg);
+                strcpy(inputfilename, optarg);
                 break;
             case 'o' :
                 try {
-                    outputfile = new char[strlen(optarg) + 1];
-                } catch (bad_alloc& error) {
-                    cerr << "Error: " << error.what() << endl;
-                    delete[] inputfile;
+                    outputfilename = new char[strlen(optarg) + 1];
+                } catch (bad_alloc& e) {
+                    cerr << "Error: " << e.what() << endl;
+                    delete[] inputfilename;
                     return EC_MEM;
                 }
-                strcpy(outputfile, optarg);
+                strcpy(outputfilename, optarg);
                 break;
             default:
                 cout << argErrorMsg;
                 return EC_ARG;
         }
     }
-    if (inputfile == NULL || outputfile == NULL) {
+    if (inputfilename == NULL || outputfilename == NULL) {
         cout << argErrorMsg;
         // In case one of them managed to be allocated:
-        delete[] inputfile;
-        delete[] outputfile;
+        delete[] inputfilename;
+        delete[] outputfilename;
         return EC_ARG;
     }
 
-    // TODO: Load graph from inputfile
-
+    // Load graph from inputfile
+    ifstream inputfile;
+    inputfile.open(inputfilename);
+    if (!inputfile) {
+        inputfile.close();      // TODO should this stay?
+        cerr << "Failed to open inputfile." << endl;
+        return EC_FILE;
+    }
     size_t bufsize;
-    char *buffer = NULL, *bufferptr = NULL, *command;
+    char *buffer = NULL, *bufferptr = NULL;
+    while (!inputfile.eof()) {
+        if (getline(&buffer, &bufsize, stdin) == -1) {
+            cerr << "Encountered an error while reading inputfile." << endl;
+            return EC_MEM;
+        }
+        // TODO multiple (n Ni Nj weight)
+    }
+    inputfile.close();
+
+    char *command;
     cout << "Type a command:" << endl;
     while (getline(&buffer, &bufsize, stdin) != -1) {           // effectively an infinite loop
         // Until "e(xit)" is given, read current line and attempt to execute it as a command
@@ -94,15 +111,15 @@ int main(int argc, char *argv[]) {
         } else if (!strcmp(command, "e")) {
             // TODO: Save graph to outputfile
             // TODO: Free all the memory!
-            delete[] inputfile;
-            delete[] outputfile;
+            delete[] inputfilename;
+            delete[] outputfilename;
             delete[] bufferptr;
             cout << "Program completed successfully." << endl;
             return EC_OK;
         } else {
             cout << "Unknown command - Type \"h\" for a list of available commands" << endl;
         }
-        buffer = bufferptr;     // used to avoid leaks due to strtok
+        buffer = bufferptr;     // used to avoid memory leaks due to strtok()
         cout << "Type a command:" << endl;
     }
     // Should never get here
