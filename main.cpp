@@ -9,9 +9,16 @@
 
 using namespace std;
 
+void cleanup(char **inputfilename, char **outputfilename, char **bufferptr, NodeList **graph) {
+    delete[] inputfilename;
+    delete[] outputfilename;
+    delete[] bufferptr;
+    delete graph;
+}
+
 int main(int argc, char *argv[]) {
-    const char argErrorMsg[] = "Invalid arguments. Please run \"$ ./mygraph -i inputfile -o outfile\"\n";
-    if (argc != 5) {
+    const char argErrorMsg[] = "Invalid arguments. Please run \"$ ./mygraph [-i inputfile] [-o outfile]\"\n";
+    if ((argc != 1 && argc != 3 && argc != 5) || (argc >= 2 && argv[1][0] != '-') || (argc >= 4 && argv[3][0] != '-')) {
         cout << argErrorMsg;
         return EC_ARG;
     }
@@ -44,47 +51,58 @@ int main(int argc, char *argv[]) {
                 return EC_ARG;
         }
     }
-    if (inputfilename == NULL || outputfilename == NULL) {
-        cout << argErrorMsg;
-        // In case one of them managed to be allocated:
-        delete[] inputfilename;
-        delete[] outputfilename;
-        return EC_ARG;
-    }
 
     NodeList *graph;
     try {
         graph = new NodeList();
     } catch (bad_alloc&) {
-        delete[] inputfilename;
-        delete[] outputfilename;
+        cleanup(&inputfilename, &outputfilename, NULL, &graph);
         return EC_MEM;
     }
 
-    // TODO uncomment
     // Load graph from inputfile
-//    ifstream inputfile;
-//    inputfile.open(inputfilename);
-//    if (!inputfile) {
-//        inputfile.close();
-//        cout << "Failed to open inputfile." << endl;
-//        delete[] inputfilename;
-//        delete[] outputfilename;
-//        delete graph;
-//        return EC_FILE;
-//    }
     size_t bufsize;
     char *buffer = NULL, *bufferptr = NULL;
-//    while (!inputfile.eof()) {
-//        if (getline(&buffer, &bufsize, stdin) == -1) {
-//            cerr << "Encountered an error while reading inputfile." << endl;
-//            return EC_MEM;
-//        }
-//        // TODO multiple (n Ni Nj weight)
-//    }
-//    inputfile.close();
+    char *Ni, *Nj, *weight;
+    if (inputfilename != NULL) {
+        FILE *inputfp;
+        inputfp = fopen(inputfilename, "r");
+        if (inputfp == NULL) {
+            cout << "Failed to open inputfile." << endl;
+            cleanup(&inputfilename, &outputfilename, NULL, &graph);
+            return EC_FILE;
+        }
+        try {
+            while (getline(&buffer, &bufsize, inputfp) != -1) {
+                if (!strcmp(buffer, "") || !strcmp(buffer, "\n")) continue;       // skip empty lines
+                bufferptr = buffer;
+                Ni = strtok(buffer, " \t");
+                Nj = strtok(NULL, " \t");
+                weight = strtok(NULL, " \t");
+                if (Ni == NULL || Nj == NULL || weight == NULL) {
+                    cerr << "Invalid inputfile format." << endl;
+                    cleanup(&inputfilename, &outputfilename, &bufferptr, &graph);
+                    return EC_FILE;
+                }
+                graph->insertEdge(Ni, Nj, atoi(weight));
+                buffer = bufferptr;     // used to avoid memory leaks due to strtok()
+            }
+        } catch (bad_alloc &e) {
+            cerr << "Encountered an error while reading inputfile." << endl;
+            cleanup(&inputfilename, &outputfilename, &bufferptr, &graph);
+            return EC_MEM;
+        }
+        if (feof(inputfp)) {
+            cout << "Loaded graph from inputfile successfully." << endl;
+        } else {
+            cerr << "Encountered an error while reading inputfile." << endl;
+            cleanup(&inputfilename, &outputfilename, NULL, &graph);
+            return EC_MEM;
+        }
+        fclose(inputfp);
+    }
 
-    char *command, *Ni, *Nj, *weight;
+    char *command;
     const char cmdErrorMsg[] = "Invalid command format - Type \"h\" for the correct format\n";
     cout << "Type a command:" << endl;
     try {
@@ -156,10 +174,7 @@ int main(int argc, char *argv[]) {
                 cout << " 'e' - save the graph to a file and exit the program" << endl;
             } else if (!strcmp(command, "e")) {
                 // TODO: Save graph to outputfile
-                delete[] inputfilename;
-                delete[] outputfilename;
-                delete[] bufferptr;
-                delete graph;
+                cleanup(&inputfilename, &outputfilename, &bufferptr, &graph);
                 cout << "Program completed successfully." << endl;
                 return EC_OK;
             } else {
@@ -169,17 +184,10 @@ int main(int argc, char *argv[]) {
             cout << "Type a command:" << endl;
         }
     } catch (bad_alloc&) {
-        delete[] inputfilename;
-        delete[] outputfilename;
-        delete[] bufferptr;
-        delete graph;
+        cleanup(&inputfilename, &outputfilename, &bufferptr, &graph);
         return EC_MEM;
     }
     // Should never get here
-    cerr << "Failed to read command" << endl;
-    delete[] inputfilename;
-    delete[] outputfilename;
-    delete[] bufferptr;
-    delete graph;
+    cleanup(&inputfilename, &outputfilename, &bufferptr, &graph);
     return EC_MEM;
 }

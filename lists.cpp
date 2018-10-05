@@ -63,7 +63,7 @@ void EdgeList::insertEdge(NodeListnode *toNode, int weight) {
         prev = current;
         current = current->getNextEdge();
     }
-    if (current == firstEdge && (current == NULL || strcmp(current->getReceivingNode()->getNodeName(), toNode->getNodeName()) != 0)) {     // insert at start
+    if (current == firstEdge) {     // insert at start
         firstEdge = new EdgeListnode(toNode, weight, firstEdge);
         return;
     }
