@@ -19,6 +19,10 @@ int EdgeListnode::getWeight() const {
     return weight;
 }
 
+void EdgeListnode::setWeight(int weight) {
+    EdgeListnode::weight = weight;
+}
+
 EdgeListnode *EdgeListnode::getNextEdge() const {
     return nextEdge;
 }
@@ -58,21 +62,66 @@ void EdgeList::print() const {
 }
 
 void EdgeList::insertEdge(NodeListnode *toNode, int weight) {
+    try {
+        EdgeListnode *current = firstEdge, *prev = firstEdge;
+        while (current != NULL && strcmp(current->getReceivingNode()->getNodeName(), toNode->getNodeName()) < 0) {
+            prev = current;
+            current = current->getNextEdge();
+        }
+        if (current == firstEdge) {     // insert at start
+            firstEdge = new EdgeListnode(toNode, weight, firstEdge);
+            return;
+        }
+        if (current != NULL) {
+            // just reached edge's assumed position
+            prev->setNextEdge(new EdgeListnode(toNode, weight, current));
+        } else {    // reached the end of the list
+            prev->setNextEdge(new EdgeListnode(toNode, weight, NULL));
+        }
+    } catch (bad_alloc& e) { throw; }
+}
+
+void EdgeList::deleteAllEdges(char *toNodeName) {
     EdgeListnode *current = firstEdge, *prev = firstEdge;
-    while (current != NULL && strcmp(current->getReceivingNode()->getNodeName(), toNode->getNodeName()) < 0) {
+    while (current != NULL && strcmp(current->getReceivingNode()->getNodeName(), toNodeName) < 0) {
         prev = current;
         current = current->getNextEdge();
     }
-    if (current == firstEdge) {     // insert at start
-        firstEdge = new EdgeListnode(toNode, weight, firstEdge);
-        return;
+    if (current == firstEdge) {
+        while (current != NULL && current->getReceivingNode() != NULL && !strcmp(current->getReceivingNode()->getNodeName(), toNodeName)) {    // there may exist multiple such edges
+            firstEdge = current->getNextEdge();
+            delete current;
+            current = firstEdge;
+        }
+    } else {
+        while (current != NULL && current->getReceivingNode() != NULL && !strcmp(current->getReceivingNode()->getNodeName(), toNodeName)) {    // there may exist multiple such edges
+            prev->setNextEdge(current->getNextEdge());
+            delete current;
+            current = prev->getNextEdge();
+        }
     }
-    if (current != NULL) {
-        // just reached edge's assumed position
-        prev->setNextEdge(new EdgeListnode(toNode, weight, current));
-    } else {    // reached the end of the list
-        prev->setNextEdge(new EdgeListnode(toNode, weight, NULL));
+}
+
+bool EdgeList::deleteEdgesWithWeight(char *toNodeName, int weight) {
+    EdgeListnode *current = firstEdge, *prev = firstEdge;
+    while (current != NULL && strcmp(current->getReceivingNode()->getNodeName(), toNodeName) < 0) {
+        prev = current;
+        current = current->getNextEdge();
     }
+    while (current != NULL && current->getReceivingNode() != NULL && !strcmp(current->getReceivingNode()->getNodeName(), toNodeName)) {    // there may exist multiple such edges
+        if (current->getWeight() == weight) {
+            if (current == firstEdge) {
+                firstEdge = current->getNextEdge();
+            } else {
+                prev->setNextEdge(current->getNextEdge());
+            }
+            delete current;
+            return true;
+        }
+        prev = current;
+        current = current->getNextEdge();
+    }
+    return false;
 }
 
 
@@ -109,10 +158,6 @@ NodeListnode *NodeListnode::getNextNode() const {
 
 void NodeListnode::setNextNode(NodeListnode *nextNode) {
     NodeListnode::nextNode = nextNode;
-}
-
-void NodeListnode::insertOutcomingEdge(NodeListnode *toNode, int weight) {
-    edges->insertEdge(toNode, weight);
 }
 
 
@@ -182,19 +227,19 @@ void NodeList::insertEdge(char *fromNodeName, char *toNodeName, int weight) {
         }
         if (current == firstNode && (current == NULL || strcmp(current->getNodeName(), fromNodeName) != 0)) {     // insert at start
             firstNode = new NodeListnode(fromNodeName, firstNode);
-            firstNode->insertOutcomingEdge(toNode, weight);
+            firstNode->getEdges()->insertEdge(toNode, weight);
             return;
         }
         if (current != NULL) {
             if (strcmp(current->getNodeName(), fromNodeName) == 0) {
-                current->insertOutcomingEdge(toNode, weight);
+                current->getEdges()->insertEdge(toNode, weight);
             } else {        // just surpassed where the node would have been found, if it existed
                 prev->setNextNode(new NodeListnode(fromNodeName, current));
-                prev->getNextNode()->insertOutcomingEdge(toNode, weight);
+                prev->getNextNode()->getEdges()->insertEdge(toNode, weight);
             }
         } else {    // reached the end of the list
             prev->setNextNode(new NodeListnode(fromNodeName, NULL));
-            prev->getNextNode()->insertOutcomingEdge(toNode, weight);
+            prev->getNextNode()->getEdges()->insertEdge(toNode, weight);
         }
     } catch (bad_alloc&) { throw; }
 }
@@ -211,6 +256,11 @@ bool NodeList::deleteNode(char *nodeName) {
         return false;
     }
     // node found
+    NodeListnode *i = firstNode;
+    while (i != NULL) {
+        i->getEdges()->deleteAllEdges(nodeName);
+        i = i->getNextNode();
+    }
     if (current == firstNode) {
         firstNode = current->getNextNode();
     } else {
@@ -220,3 +270,30 @@ bool NodeList::deleteNode(char *nodeName) {
     return true;
 }
 
+bool NodeList::deleteAllEdges(char *fromName, char *toNodeName) {
+    NodeListnode *current = firstNode;
+    while (current != NULL && strcmp(current->getNodeName(), fromName) < 0) {
+        current = current->getNextNode();
+    }
+    // if reached end of list or surpassed node assumed position
+    if (current == NULL || strcmp(current->getNodeName(), fromName) != 0) {
+        return false;
+    }
+    // node found
+    current->getEdges()->deleteAllEdges(toNodeName);
+    return true;
+}
+
+bool NodeList::deleteEdgesWithWeight(char *fromName, char *toNodeName, int weight) {
+    NodeListnode *current = firstNode;
+    while (current != NULL && strcmp(current->getNodeName(), fromName) < 0) {
+        current = current->getNextNode();
+    }
+    // if reached end of list or surpassed node assumed position
+    if (current == NULL || strcmp(current->getNodeName(), fromName) != 0) {
+        return false;
+    }
+    // node found
+    current->getEdges()->deleteEdgesWithWeight(toNodeName, weight);
+    return true;
+}

@@ -12,6 +12,7 @@ public:
     ~EdgeListnode();
     NodeListnode *getReceivingNode() const;
     int getWeight() const;
+    void setWeight(int weight);
     EdgeListnode *getNextEdge() const;
     void setNextEdge(EdgeListnode *nextEdge);
 };
@@ -25,6 +26,8 @@ public:
     void setFirstEdge(EdgeListnode *firstEdge);
     void print() const;
     void insertEdge(NodeListnode *toNode, int weight);
+    void deleteAllEdges(char *toNodeName);
+    bool deleteEdgesWithWeight(char *toNodeName, int weight);
 };
 
 class NodeListnode {
@@ -38,7 +41,6 @@ public:
     EdgeList *getEdges() const;
     NodeListnode *getNextNode() const;
     void setNextNode(NodeListnode *nextNode);
-    void insertOutcomingEdge(NodeListnode *toNode, int weight);
 };
 
 class NodeList {
@@ -52,6 +54,8 @@ public:
     NodeListnode *insertNode(char *nodeName);
     void insertEdge(char *fromNodeName, char *toNodeName, int weight);
     bool deleteNode(char *nodeName);
+    bool deleteAllEdges(char *fromName, char *toNodeName);
+    bool deleteEdgesWithWeight(char *fromName, char *toNodeName, int weight);
 };
 
 #endif

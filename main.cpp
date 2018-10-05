@@ -10,10 +10,12 @@
 using namespace std;
 
 void cleanup(char **inputfilename, char **outputfilename, char **bufferptr, NodeList **graph) {
-    delete[] inputfilename;
-    delete[] outputfilename;
-    delete[] bufferptr;
-    delete graph;
+    delete[] *inputfilename;
+    delete[] *outputfilename;
+    delete[] *bufferptr;
+    *inputfilename = *outputfilename = *bufferptr = NULL;
+    delete *graph;
+    *graph = NULL;
 }
 
 int main(int argc, char *argv[]) {
@@ -142,7 +144,18 @@ int main(int argc, char *argv[]) {
                     }
                 }
             } else if (!strcmp(command, "l")) {
-
+                Ni = strtok(NULL, " ");
+                Nj = strtok(NULL, " ");
+                weight = strtok(NULL, " ");
+                if (Ni == NULL || Nj == NULL) {
+                    cout << cmdErrorMsg;
+                } else {
+                    if (weight == NULL) {
+                        graph->deleteAllEdges(Ni, Nj);
+                    } else {
+                        graph->deleteEdgesWithWeight(Ni, Nj, atoi(weight));
+                    }
+                }
             } else if (!strcmp(command, "m")) {
 
             } else if (!strcmp(command, "r")) {
