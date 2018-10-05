@@ -24,6 +24,7 @@ public:
     EdgeListnode *getFirstEdge() const;
     void setFirstEdge(EdgeListnode *firstEdge);
     void print() const;
+    void insertEdge(NodeListnode *toNode, int weight);
 };
 
 class NodeListnode {
@@ -37,6 +38,7 @@ public:
     EdgeList *getEdges() const;
     NodeListnode *getNextNode() const;
     void setNextNode(NodeListnode *nextNode);
+    void insertOutcomingEdge(NodeListnode *toNode, int weight);
 };
 
 class NodeList {
@@ -47,7 +49,8 @@ public:
     NodeListnode *getFirstNode() const;
     void setFirstNode(NodeListnode *firstNode);
     void print() const;
-    bool insertInOrder(char *nodeName);
+    NodeListnode *insertNode(char *nodeName);
+    void insertEdge(char *fromNodeName, char *toNodeName, int weight);
     bool deleteNode(char *nodeName);
 };
 

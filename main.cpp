@@ -3,6 +3,7 @@
 #include <cstring>
 #include <cstdio>
 #include <fstream>
+#include <cstdlib>
 #include "util.h"
 #include "lists.h"
 
@@ -98,12 +99,21 @@ int main(int argc, char *argv[]) {
                 if (Ni == NULL) {
                     cout << cmdErrorMsg;
                 } else {
-                    if (!graph->insertInOrder(Ni)) {
-                        cout << "Insertion failed: A node named \"" << Ni << "\" already exists!" << endl;
-                    }
+                    graph->insertNode(Ni);
+                    // TODO: size comparison instead?
+//                    if (!graph->insertNode(Ni)) {
+//                        cout << "Insertion failed: A node named \"" << Ni << "\" already exists!" << endl;
+//                    }
                 }
             } else if (!strcmp(command, "n")) {
-
+                Ni = strtok(NULL, " ");
+                Nj = strtok(NULL, " ");
+                weight = strtok(NULL, " ");
+                if (Ni == NULL || Nj == NULL || weight == NULL) {
+                    cout << cmdErrorMsg;
+                } else {
+                    graph->insertEdge(Ni, Nj, atoi(weight));
+                }
             } else if (!strcmp(command, "d")) {
                 Ni = strtok(NULL, " ");
                 if (Ni == NULL) {
@@ -113,7 +123,6 @@ int main(int argc, char *argv[]) {
                         cout << "Deletion failed: Node not found!" << endl;
                     }
                 }
-
             } else if (!strcmp(command, "l")) {
 
             } else if (!strcmp(command, "m")) {

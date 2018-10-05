@@ -52,8 +52,27 @@ void EdgeList::print() const {
     EdgeListnode *current = firstEdge;
     while (current != NULL) {
         cout << " >" << current->getReceivingNode()->getNodeName() << "(" << current->getWeight() << ")";
+        current = current->getNextEdge();
     }
     cout << " >/" << endl;
+}
+
+void EdgeList::insertEdge(NodeListnode *toNode, int weight) {
+    EdgeListnode *current = firstEdge, *prev = firstEdge;
+    while (current != NULL && strcmp(current->getReceivingNode()->getNodeName(), toNode->getNodeName()) < 0) {
+        prev = current;
+        current = current->getNextEdge();
+    }
+    if (current == firstEdge && (current == NULL || strcmp(current->getReceivingNode()->getNodeName(), toNode->getNodeName()) != 0)) {     // insert at start
+        firstEdge = new EdgeListnode(toNode, weight, firstEdge);
+        return;
+    }
+    if (current != NULL) {
+        // just reached edge's assumed position
+        prev->setNextEdge(new EdgeListnode(toNode, weight, current));
+    } else {    // reached the end of the list
+        prev->setNextEdge(new EdgeListnode(toNode, weight, NULL));
+    }
 }
 
 
@@ -92,6 +111,10 @@ void NodeListnode::setNextNode(NodeListnode *nextNode) {
     NodeListnode::nextNode = nextNode;
 }
 
+void NodeListnode::insertOutcomingEdge(NodeListnode *toNode, int weight) {
+    edges->insertEdge(toNode, weight);
+}
+
 
 // NodeList methods:
 NodeList::NodeList() : firstNode(NULL) {}
@@ -123,7 +146,7 @@ void NodeList::print() const {
     cout << '/' << endl;
 }
 
-bool NodeList::insertInOrder(char *nodeName) {
+NodeListnode *NodeList::insertNode(char *nodeName) {        // also acts as a node getter
     try {
         NodeListnode *current = firstNode, *prev = firstNode;
         while (current != NULL && strcmp(current->getNodeName(), nodeName) < 0) {
@@ -132,19 +155,46 @@ bool NodeList::insertInOrder(char *nodeName) {
         }
         if (current == firstNode && (current == NULL || strcmp(current->getNodeName(), nodeName) != 0)) {     // insert at start
             firstNode = new NodeListnode(nodeName, firstNode);
-            return true;
+            return firstNode;
         }
         if (current != NULL) {
             if (strcmp(current->getNodeName(), nodeName) == 0) {
-//                cout << "Warning: Attempted to insert node with a name that already exists!" << endl;
-                return false;
+                return current;
             } else {        // just surpassed where the node would have been found, if it existed
                 prev->setNextNode(new NodeListnode(nodeName, current));
-                return true;
+                return prev->getNextNode();
             }
         } else {    // reached the end of the list
             prev->setNextNode(new NodeListnode(nodeName, NULL));
-            return true;
+            return prev->getNextNode();
+        }
+    } catch (bad_alloc&) { throw; }
+}
+
+void NodeList::insertEdge(char *fromNodeName, char *toNodeName, int weight) {
+    // Similar algorithm to insertNode() - if node isn't found we create it and then insert the edge
+    try {
+        NodeListnode *toNode = insertNode(toNodeName);
+        NodeListnode *current = firstNode, *prev = firstNode;
+        while (current != NULL && strcmp(current->getNodeName(), fromNodeName) < 0) {
+            prev = current;
+            current = current->getNextNode();
+        }
+        if (current == firstNode && (current == NULL || strcmp(current->getNodeName(), fromNodeName) != 0)) {     // insert at start
+            firstNode = new NodeListnode(fromNodeName, firstNode);
+            firstNode->insertOutcomingEdge(toNode, weight);
+            return;
+        }
+        if (current != NULL) {
+            if (strcmp(current->getNodeName(), fromNodeName) == 0) {
+                current->insertOutcomingEdge(toNode, weight);
+            } else {        // just surpassed where the node would have been found, if it existed
+                prev->setNextNode(new NodeListnode(fromNodeName, current));
+                prev->getNextNode()->insertOutcomingEdge(toNode, weight);
+            }
+        } else {    // reached the end of the list
+            prev->setNextNode(new NodeListnode(fromNodeName, NULL));
+            prev->getNextNode()->insertOutcomingEdge(toNode, weight);
         }
     } catch (bad_alloc&) { throw; }
 }
@@ -158,18 +208,15 @@ bool NodeList::deleteNode(char *nodeName) {
     }
     // if reached end of list or surpassed node assumed position
     if (current == NULL || strcmp(current->getNodeName(), nodeName) != 0) {
-//        cout << "Warning: Node not found!" << endl;
         return false;
     }
-    if (strcmp(current->getNodeName(), nodeName) == 0) {     // node found
-        if (current == firstNode) {
-            firstNode = current->getNextNode();
-        } else {
-            prev->setNextNode(current->getNextNode());
-        }
-        delete current;
-        return true;
+    // node found
+    if (current == firstNode) {
+        firstNode = current->getNextNode();
+    } else {
+        prev->setNextNode(current->getNextNode());
     }
-
+    delete current;
+    return true;
 }
 
