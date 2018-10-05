@@ -157,7 +157,15 @@ int main(int argc, char *argv[]) {
                     }
                 }
             } else if (!strcmp(command, "m")) {
-
+                Ni = strtok(NULL, " ");
+                Nj = strtok(NULL, " ");
+                weight = strtok(NULL, " ");
+                char *nweight = strtok(NULL, " ");
+                if (Ni == NULL || Nj == NULL || weight == NULL || nweight == NULL) {
+                    cout << cmdErrorMsg;
+                } else {
+                     graph->modifyEdge(Ni, Nj, atoi(weight), atoi(nweight));
+                }
             } else if (!strcmp(command, "r")) {
 
             } else if (!strcmp(command, "c")) {

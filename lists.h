@@ -28,6 +28,7 @@ public:
     void insertEdge(NodeListnode *toNode, int weight);
     void deleteAllEdges(char *toNodeName);
     bool deleteEdgesWithWeight(char *toNodeName, int weight);
+    bool modifyEdge(char *toNodeName, int weight, int nweight);
 };
 
 class NodeListnode {
@@ -51,11 +52,13 @@ public:
     NodeListnode *getFirstNode() const;
     void setFirstNode(NodeListnode *firstNode);
     void print() const;
+    NodeListnode *getNodeByName(char *nodeName);
     NodeListnode *insertNode(char *nodeName);
     void insertEdge(char *fromNodeName, char *toNodeName, int weight);
     bool deleteNode(char *nodeName);
     bool deleteAllEdges(char *fromName, char *toNodeName);
     bool deleteEdgesWithWeight(char *fromName, char *toNodeName, int weight);
+    bool modifyEdge(char *fromName, char *toNodeName, int weight, int nweight);
 };
 
 #endif
