@@ -366,7 +366,7 @@ void NodeList::printReceiving(char *nodeName) {
     NodeListnode *current = firstNode;
     bool printed = false;
     while (current != NULL) {
-        printed = printed || (current->getEdges()->printTransactionsTo(current->getNodeName(), nodeName));      // prints and updates flag
+        printed = (current->getEdges()->printTransactionsTo(current->getNodeName(), nodeName)) || printed;      // prints and updates flag
         current = current->getNextNode();
     }
     if (!printed) {
