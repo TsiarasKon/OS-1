@@ -53,14 +53,14 @@ void EdgeList::setFirstEdge(EdgeListnode *firstEdge) {
     EdgeList::firstEdge = firstEdge;
 }
 
-void EdgeList::print() const {
+void EdgeList::print(std::ostream& outstream) const {
     EdgeListnode *current = firstEdge;
-    cout << endl;
+    outstream << endl;
     while (current != NULL) {
-        cout << "\t\t--" << setfill('-') << setw(4) << current->getWeight() << "-->|" << current->getReceivingNode()->getNodeName() << "|" << endl;
+        outstream << "\t\t--" << setfill('-') << setw(4) << current->getWeight() << "-->|" << current->getReceivingNode()->getNodeName() << "|" << endl;
         current = current->getNextEdge();
     }
-    cout << endl;
+    outstream << endl;
 }
 
 void EdgeList::insertEdge(NodeListnode *toNode, int weight) {
@@ -219,11 +219,11 @@ void NodeList::setFirstNode(NodeListnode *firstNode) {
     NodeList::firstNode = firstNode;
 }
 
-void NodeList::print() const {
+void NodeList::print(std::ostream& outstream) const {
     NodeListnode *current = firstNode;
     while (current != NULL) {
-        cout << " |" << current->getNodeName() << "|";
-        current->getEdges()->print();
+        outstream << " |" << current->getNodeName() << "|";
+        current->getEdges()->print(outstream);
         current = current->getNextNode();
     }
 }

@@ -1,6 +1,8 @@
 #ifndef OS_1_MYLIST_H
 #define OS_1_MYLIST_H
 
+#include <fstream>
+
 class NodeListnode;         // forward declaration
 
 class EdgeListnode {
@@ -24,7 +26,7 @@ public:
     ~EdgeList();
     EdgeListnode *getFirstEdge() const;
     void setFirstEdge(EdgeListnode *firstEdge);
-    void print() const;
+    void print(std::ostream& outstream) const;
     void insertEdge(NodeListnode *toNode, int weight);
     int deleteAllEdges(char *toNodeName);
     int deleteEdgesWithWeight(char *toNodeName, int weight);
@@ -52,7 +54,7 @@ public:
     ~NodeList();
     NodeListnode *getFirstNode() const;
     void setFirstNode(NodeListnode *firstNode);
-    void print() const;
+    void print(std::ostream& outstream) const;
     NodeListnode *getNodeByName(char *nodeName);
     NodeListnode *insertNode(char *nodeName);
     void insertEdge(char *fromNodeName, char *toNodeName, int weight);

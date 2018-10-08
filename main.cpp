@@ -116,10 +116,17 @@ int main(int argc, char *argv[]) {
 
     if (outputfilename != NULL) {
         cout << "Saving graph to outputfile ..." << endl;
-
-        // TODO: Save graph to outputfile
-
-        cout << "Saved graph to outputfile successfully." << endl;
+        ofstream outputfile;
+        outputfile.open(outputfilename);
+        if (outputfile.is_open()) {
+            graph->print(outputfile);
+        } else {
+            cout << "Failed to open outputfile." << endl;
+            cleanup(&inputfilename, &outputfilename, &bufferptr, &graph);
+            return EC_FILE;
+        }
+        outputfile.close();
+        cout << "Saved graph to outputfile successfully!" << endl;
     }
 
     cleanup(&inputfilename, &outputfilename, &bufferptr, &graph);
