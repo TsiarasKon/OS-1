@@ -1,0 +1,81 @@
+COMMAND: i(nsert) Ni
+EXPECTED OUTPUT:
+	- Inserted |Ni| 
+ERROR INDICATION:
+	- Node |Ni| Exists; 
+
+COMMAND: (i)n(sert) Ni Nj weight
+EXPECTED OUTPUT:
+	- Inserted |Ni|->weight->|Nj|
+ERROR INDICATION:
+	- none
+
+COMMAND: d(elete) Ni
+EXPECTED OUTPUT:
+	- Deleted |Ni|
+ERROR INDICATION:
+	- Node |Ni| does not exist - abort-d;
+
+COMMAND: (de)l(ete) Ni Nj weight
+EXPECTED OUTPUT:
+	- Del-vertex |Ni|->weight->|Nj| 
+ERROR INDICATION(s):
+	- |Ni| does not exist - abort-l;
+        - |Nj| does not exist - abort-l;
+        - |Ni|->weight->|Nj| does not exist - abort-l;
+
+COMMAND: m(odify) Ni Nj weight nweight
+EXPECTED OUTPUT:
+	- Mod-vertex |Ni|->nweight->|Nj|
+ERROR INDICATION:
+	- |Ni| does not exist - abort-m;
+        - |Nj| does not exist - abort-m;
+        - |Ni|->weight->|Nj| does not exist - abort-m;
+
+COMMAND: r(eceiving) Ni
+EXPECTED OUTPUT:
+	- No-rec-edges Ni
+	- Rec-edges |Nj|->weight->|Ni| 
+		    |Nk|->weightk->|Ni| ... 
+		    ...
+		    |Nl|->weightl->|Ni|
+ERROR INDICATION:
+	- |Ni| does not exist - abort-r;
+
+COMMAND: c(irclefind) Ni
+EXPECTED OUTPUT:
+	- No-circle-found |Ni| 
+	- Cir-found |Ni|->weighti->|Nj|->weightj->|Nk|->weightk->...->|Ni|
+ERROR INDICATION:
+	- |Ni| does not exist - abort-c;
+
+COMMAND: f(indcircles) Ni k
+EXPECTED OUTPUT:
+	- No-circle-found involving |Ni| k 
+	- Cir-found |Ni|->weighti->|Nj|->weightj->|Nk|->weightk->...->|Ni|
+ERROR INDICATION:
+	- |Ni| does not exist - abort-f;
+
+COMMAND: t(raceflow) Ni Nj l
+EXPECTED OUTPUT:
+	- No-trace from |Ni| to |Nj|
+	- Tra-found |Ni|->weighti->|Nj|->weightj->|Nk|->weightk->...->|Ni|
+ERROR INDICATION:
+	- |Ni| does not exist - abort-l;
+        - |Nj| does not exist - abort-l;
+
+COMMAND: e(xit)
+EXPECTED OUTPUT:
+	- exit program
+ERROR INDICATION:
+	- none
+
+FOR PRINTING OUT  THE GRAPH USING -o OPTION:
+EXPECTED OUTPUT: |V1|
+  			-wi->|Vi|
+  			...
+
+		 |V2|
+  			-wk->|Vk|
+  			....
+

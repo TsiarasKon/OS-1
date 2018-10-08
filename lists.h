@@ -26,9 +26,9 @@ public:
     void setFirstEdge(EdgeListnode *firstEdge);
     void print() const;
     void insertEdge(NodeListnode *toNode, int weight);
-    void deleteAllEdges(char *toNodeName);
-    bool deleteEdgesWithWeight(char *toNodeName, int weight);
-    bool modifyEdge(char *toNodeName, int weight, int nweight);
+    int deleteAllEdges(char *toNodeName);
+    int deleteEdgesWithWeight(char *toNodeName, int weight);
+    int modifyEdge(char *toNodeName, int weight, int nweight);
     bool printTransactionsTo(char *fromNodeName, char *toNodeName);
 };
 
@@ -57,9 +57,9 @@ public:
     NodeListnode *insertNode(char *nodeName);
     void insertEdge(char *fromNodeName, char *toNodeName, int weight);
     bool deleteNode(char *nodeName);
-    bool deleteAllEdges(char *fromName, char *toNodeName);
-    bool deleteEdgesWithWeight(char *fromName, char *toNodeName, int weight);
-    bool modifyEdge(char *fromName, char *toNodeName, int weight, int nweight);
+    int deleteAllEdges(char *fromName, char *toNodeName);
+    int deleteEdgesWithWeight(char *fromName, char *toNodeName, int weight);
+    int modifyEdge(char *fromName, char *toNodeName, int weight, int nweight);
     void printReceiving(char *nodeName);
 };
 

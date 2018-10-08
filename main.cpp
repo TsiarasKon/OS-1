@@ -19,7 +19,7 @@ void cleanup(char **inputfilename, char **outputfilename, char **bufferptr, Node
 }
 
 int main(int argc, char *argv[]) {
-    const char argErrorMsg[] = "Invalid arguments. Please run \"$ ./mygraph [-i inputfile] [-o outfile]\"\n";
+    const char argErrorMsg[] = " Invalid arguments. Please run \"$ ./mygraph [-i inputfile] [-o outfile]\"\n";
     if ((argc != 1 && argc != 3 && argc != 5) || (argc >= 2 && argv[1][0] != '-') || (argc >= 4 && argv[3][0] != '-')) {
         cout << argErrorMsg;
         return EC_ARG;
@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
     }
 
     char *command;
-    const char cmdErrorMsg[] = "Invalid command format - Type \"h\" for the correct format\n";
+    const char cmdErrorMsg[] = " Invalid command format - Type \"h\" for the correct format\n";
     cout << endl << "Type a command: ";
     try {
         while (getline(&buffer, &bufsize, stdin) != -1) {           // effectively an infinite loop
@@ -120,10 +120,11 @@ int main(int argc, char *argv[]) {
                     cout << cmdErrorMsg;
                 } else {
                     graph->insertNode(Ni);
-                    // TODO: size comparison instead?
-//                    if (!graph->insertNode(Ni)) {
-//                        cout << "Insertion failed: A node named \"" << Ni << "\" already exists!" << endl;
-//                    }
+                    if (graph->insertNode(Ni) != NULL) {
+                        cout << " Inserted |" << Ni << "|" << endl;
+                    } else {
+                        cout << " Node |" << Ni << "| already exists;" << endl;
+                    }
                 }
             } else if (!strcmp(command, "n")) {
                 Ni = strtok(NULL, " ");
@@ -133,14 +134,17 @@ int main(int argc, char *argv[]) {
                     cout << cmdErrorMsg;
                 } else {
                     graph->insertEdge(Ni, Nj, atoi(weight));
+                    cout << " Inserted |" << Ni << "|--" << weight << "-->|" << Nj << "|" << endl;
                 }
             } else if (!strcmp(command, "d")) {
                 Ni = strtok(NULL, " ");
                 if (Ni == NULL) {
                     cout << cmdErrorMsg;
                 } else {
-                    if (!graph->deleteNode(Ni)) {
-                        cout << "Deletion failed: Node not found!" << endl;
+                    if (graph->deleteNode(Ni)) {
+                        cout << " Deleted |" << Ni << "|" << endl;
+                    } else {
+                        cout << " Node |" << Ni << "| does not exist - abort-d;" << endl;
                     }
                 }
             } else if (!strcmp(command, "l")) {
@@ -150,10 +154,26 @@ int main(int argc, char *argv[]) {
                 if (Ni == NULL || Nj == NULL) {
                     cout << cmdErrorMsg;
                 } else {
+                    int res;
                     if (weight == NULL) {
-                        graph->deleteAllEdges(Ni, Nj);
+                        res = graph->deleteAllEdges(Ni, Nj);
+                        if (res == 0) {
+                            cout << " Del-all-vertices |" << Ni << "|--->|" << Nj << "|" << endl;
+                        } else if (res == -3) {     // can only happen if weight was specified
+                            cout << " No |" << Ni << "|--->|" << Nj << "| exists - abort-l;" << endl;
+                        }
                     } else {
-                        graph->deleteEdgesWithWeight(Ni, Nj, atoi(weight));
+                        res = graph->deleteEdgesWithWeight(Ni, Nj, atoi(weight));
+                        if (res == 0) {
+                            cout << " Del-vertex |" << Ni << "|--" << weight << "-->|" << Nj << "|" << endl;
+                        } else if (res == -3) {     // can only happen if weight was specified
+                            cout << " |" << Ni << "|--" << weight << "-->|" << Nj << "| does not exist - abort-l;" << endl;
+                        }
+                    }
+                    if (res == -1) {
+                        cout << " Node |" << Ni << "| does not exist - abort-l;" << endl;
+                    } else if (res == -2) {
+                        cout << " Node |" << Nj << "| does not exist - abort-l;" << endl;
                     }
                 }
             } else if (!strcmp(command, "m")) {
@@ -164,7 +184,16 @@ int main(int argc, char *argv[]) {
                 if (Ni == NULL || Nj == NULL || weight == NULL || nweight == NULL) {
                     cout << cmdErrorMsg;
                 } else {
-                     graph->modifyEdge(Ni, Nj, atoi(weight), atoi(nweight));
+                    int res = graph->modifyEdge(Ni, Nj, atoi(weight), atoi(nweight));
+                    if (res == 0) {
+                        cout << " Mod-vertex |" << Ni << "|--" << nweight << "-->|" << Nj << "|" << endl;
+                    } else if (res == -1) {
+                        cout << " Node |" << Ni << "| does not exist - abort-m;" << endl;
+                    } else if (res == -2) {
+                        cout << " Node |" << Nj << "| does not exist - abort-m;" << endl;
+                    } else if (res == -3) {
+                        cout << " |" << Ni << "|--" << weight << "-->|" << Nj << "| does not exist - abort-m;" << endl;
+                    }
                 }
             } else if (!strcmp(command, "r")) {
                 Ni = strtok(NULL, " ");
@@ -204,7 +233,7 @@ int main(int argc, char *argv[]) {
                 cout << "Program completed successfully." << endl;
                 return EC_OK;
             } else {
-                cout << "Unknown command - Type \"h\" for a list of available commands" << endl;
+                cout << " Unknown command - Type \"h\" for a list of available commands;" << endl;
             }
             buffer = bufferptr;     // used to avoid memory leaks due to strtok()
             cout << endl << "Type a command: ";
