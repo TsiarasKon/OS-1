@@ -9,9 +9,9 @@
 
 using namespace std;
 
-void interface(NodeList *graph);
+void interface(Graph *graph);
 
-void cleanup(char **inputfilename, char **outputfilename, char **bufferptr, NodeList **graph) {
+void cleanup(char **inputfilename, char **outputfilename, char **bufferptr, Graph **graph) {
     delete[] *inputfilename;
     delete[] *outputfilename;
     delete[] *bufferptr;
@@ -56,9 +56,9 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    NodeList *graph;
+    Graph *graph;
     try {
-        graph = new NodeList();
+        graph = new Graph();
     } catch (bad_alloc&) {
         cleanup(&inputfilename, &outputfilename, NULL, &graph);
         return EC_MEM;
@@ -126,10 +126,10 @@ int main(int argc, char *argv[]) {
             return EC_FILE;
         }
         outputfile.close();
-        cout << "Saved graph to outputfile successfully!" << endl;
+        cout << "Saved graph to outputfile successfully!" << endl << endl;
     }
 
     cleanup(&inputfilename, &outputfilename, &bufferptr, &graph);
-    cout << endl << "Program completed successfully!" << endl;
+    cout << "Program completed successfully!" << endl;
     return EC_OK;
 }

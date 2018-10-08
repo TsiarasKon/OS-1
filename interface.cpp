@@ -7,7 +7,7 @@
 
 using namespace std;
 
-void interface(NodeList *graph) {
+void interface(Graph *graph) {
     size_t bufsize;
     char *buffer = NULL, *bufferptr = NULL;
     char *Ni, *Nj, *weight;
@@ -110,11 +110,29 @@ void interface(NodeList *graph) {
                     graph->printReceiving(Ni);
                 }
             } else if (!strcmp(command, "c")) {
-
+                Ni = strtok(NULL, " ");
+                if (Ni == NULL) {
+                    cout << cmdErrorMsg;
+                } else {
+                    graph->circlefind(Ni);
+                }
             } else if (!strcmp(command, "f")) {
-
+                Ni = strtok(NULL, " ");
+                weight = strtok(NULL, " ");
+                if (Ni == NULL || weight == NULL) {
+                    cout << cmdErrorMsg;
+                } else {
+//                    graph->findcircles(Ni, weight);
+                }
             } else if (!strcmp(command, "t")) {
-
+                Ni = strtok(NULL, " ");
+                Nj = strtok(NULL, " ");
+                char *len = strtok(NULL, " ");
+                if (Ni == NULL || Nj == NULL || len == NULL) {
+                    cout << cmdErrorMsg;
+                } else {
+//                    graph->traceflow(Ni, Nj, len);
+                }
             } else if (!strcmp(command, "p")) {         // bonus: p(rint) command
                 graph->print(cout);
             } else if (!strcmp(command, "h")) {         // bouns: h(elp) command

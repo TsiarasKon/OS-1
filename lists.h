@@ -3,16 +3,18 @@
 
 #include <fstream>
 
-class NodeListnode;         // forward declaration
+// forward declarations
+class Graph;
+class GraphNode;
 
 class EdgeListnode {
-    NodeListnode *receivingNode;
+    GraphNode *receivingNode;
     int weight;
     EdgeListnode *nextEdge;
 public:
-    EdgeListnode(NodeListnode *receivingNode, int weight, EdgeListnode *nextEdge);
+    EdgeListnode(GraphNode *receivingNode, int weight, EdgeListnode *nextEdge);
     ~EdgeListnode();
-    NodeListnode *getReceivingNode() const;
+    GraphNode *getReceivingNode() const;
     int getWeight() const;
     void setWeight(int weight);
     EdgeListnode *getNextEdge() const;
@@ -20,6 +22,7 @@ public:
 };
 
 class EdgeList {
+protected:
     EdgeListnode *firstEdge;
 public:
     EdgeList();
@@ -27,42 +30,55 @@ public:
     EdgeListnode *getFirstEdge() const;
     void setFirstEdge(EdgeListnode *firstEdge);
     void print(std::ostream& outstream) const;
-    void insertEdge(NodeListnode *toNode, int weight);
+    void insertEdge(GraphNode *toNode, int weight);
     int deleteAllEdges(char *toNodeName);
     int deleteEdgesWithWeight(char *toNodeName, int weight);
     int modifyEdge(char *toNodeName, int weight, int nweight);
-    bool printTransactionsTo(char *fromNodeName, char *toNodeName);
+    bool printTransactionsTo(char *fromNodeName, char *toNodeName) const;
 };
 
-class NodeListnode {
+class Cycle : public EdgeList {
+    char *startingNodeName;
+    EdgeListnode *lastEdge;
+public:
+    Cycle(char *startingNodeName);
+    char *getStartingNodeName() const;
+    void insertUnordered(GraphNode *toNode, int weight);
+    void deleteLast();
+    void printCycle() const;
+};
+
+class GraphNode {
     char *nodeName;
     EdgeList *edges;
-    NodeListnode *nextNode;
+    GraphNode *nextNode;
 public:
-    NodeListnode(char *nodeName, NodeListnode *nextNode);
-    ~NodeListnode();
+    GraphNode(char *nodeName, GraphNode *nextNode);
+    ~GraphNode();
     char *getNodeName() const;
     EdgeList *getEdges() const;
-    NodeListnode *getNextNode() const;
-    void setNextNode(NodeListnode *nextNode);
+    GraphNode *getNextNode() const;
+    void setNextNode(GraphNode *nextNode);
+    bool checkNextForCycle(Cycle *visited);
 };
 
-class NodeList {
-    NodeListnode *firstNode;
+class Graph {
+    GraphNode *firstNode;
 public:
-    NodeList();
-    ~NodeList();
-    NodeListnode *getFirstNode() const;
-    void setFirstNode(NodeListnode *firstNode);
+    Graph();
+    ~Graph();
+    GraphNode *getFirstNode() const;
+    void setFirstNode(GraphNode *firstNode);
     void print(std::ostream& outstream) const;
-    NodeListnode *getNodeByName(char *nodeName);
-    NodeListnode *insertNode(char *nodeName);
+    GraphNode *getNodeByName(char *nodeName) const;
+    GraphNode *insertNode(char *nodeName);
     void insertEdge(char *fromNodeName, char *toNodeName, int weight);
     bool deleteNode(char *nodeName);
     int deleteAllEdges(char *fromName, char *toNodeName);
     int deleteEdgesWithWeight(char *fromName, char *toNodeName, int weight);
     int modifyEdge(char *fromName, char *toNodeName, int weight, int nweight);
-    void printReceiving(char *nodeName);
+    void printReceiving(char *nodeName) const;
+    void circlefind(char *nodeName) const;
 };
 
 #endif
