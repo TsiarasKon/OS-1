@@ -139,6 +139,21 @@ bool EdgeList::modifyEdge(char *toNodeName, int weight, int nweight) {
     return false;
 }
 
+bool EdgeList::printTransactionsTo(char *fromNodeName, char *toNodeName) {
+    EdgeListnode *current = firstEdge;
+    while (current != NULL && strcmp(current->getReceivingNode()->getNodeName(), toNodeName) < 0) {
+        current = current->getNextEdge();
+    }
+    bool printed = false;
+    while (current != NULL && current->getReceivingNode() != NULL && !strcmp(current->getReceivingNode()->getNodeName(), toNodeName)) {
+        cout << " |" << fromNodeName << "|--" << current->getWeight() << "-->|" <<
+             toNodeName << "|" << endl;
+        printed = true;
+        current = current->getNextEdge();
+    }
+    return printed;
+}
+
 
 // NodeListNode methods:
 NodeListnode::NodeListnode(char *nodeName, NodeListnode *nextNode) :
@@ -321,4 +336,21 @@ bool NodeList::modifyEdge(char *fromName, char *toNodeName, int weight, int nwei
         return false;
     }
     return fromNode->getEdges()->modifyEdge(toNodeName, weight, nweight);
+}
+
+void NodeList::printReceiving(char *nodeName) {
+    NodeListnode *toNode = getNodeByName(nodeName);
+    if (toNode == NULL) {
+        cout << " |" << nodeName << "| does not exist - abort-r;" << endl;
+        return;
+    }
+    NodeListnode *current = firstNode;
+    bool printed = false;
+    while (current != NULL) {
+        printed = printed || (current->getEdges()->printTransactionsTo(current->getNodeName(), nodeName));      // prints and updates flag
+        current = current->getNextNode();
+    }
+    if (!printed) {
+        cout << " No-rec-edges |" << nodeName << "|" << endl;
+    }
 }

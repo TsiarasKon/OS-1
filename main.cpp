@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
 
     char *command;
     const char cmdErrorMsg[] = "Invalid command format - Type \"h\" for the correct format\n";
-    cout << "Type a command:" << endl;
+    cout << endl << "Type a command: ";
     try {
         while (getline(&buffer, &bufsize, stdin) != -1) {           // effectively an infinite loop
             // Until "e(xit)" is given, read current line and attempt to execute it as a command
@@ -167,7 +167,12 @@ int main(int argc, char *argv[]) {
                      graph->modifyEdge(Ni, Nj, atoi(weight), atoi(nweight));
                 }
             } else if (!strcmp(command, "r")) {
-
+                Ni = strtok(NULL, " ");
+                if (Ni == NULL) {
+                    cout << cmdErrorMsg;
+                } else {
+                    graph->printReceiving(Ni);
+                }
             } else if (!strcmp(command, "c")) {
 
             } else if (!strcmp(command, "f")) {
@@ -202,7 +207,7 @@ int main(int argc, char *argv[]) {
                 cout << "Unknown command - Type \"h\" for a list of available commands" << endl;
             }
             buffer = bufferptr;     // used to avoid memory leaks due to strtok()
-            cout << "Type a command:" << endl;
+            cout << endl << "Type a command: ";
         }
     } catch (bad_alloc&) {
         cleanup(&inputfilename, &outputfilename, &bufferptr, &graph);

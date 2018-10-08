@@ -29,6 +29,7 @@ public:
     void deleteAllEdges(char *toNodeName);
     bool deleteEdgesWithWeight(char *toNodeName, int weight);
     bool modifyEdge(char *toNodeName, int weight, int nweight);
+    bool printTransactionsTo(char *fromNodeName, char *toNodeName);
 };
 
 class NodeListnode {
@@ -59,6 +60,7 @@ public:
     bool deleteAllEdges(char *fromName, char *toNodeName);
     bool deleteEdgesWithWeight(char *fromName, char *toNodeName, int weight);
     bool modifyEdge(char *fromName, char *toNodeName, int weight, int nweight);
+    void printReceiving(char *nodeName);
 };
 
 #endif
