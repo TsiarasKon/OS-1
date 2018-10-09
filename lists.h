@@ -41,10 +41,11 @@ class Cycle : public EdgeList {
     char *startingNodeName;
     EdgeListnode *lastEdge;
 public:
-    Cycle(char *startingNodeName);
+    explicit Cycle(char *startingNodeName);
     char *getStartingNodeName() const;
     void insertUnordered(GraphNode *toNode, int weight);
     void deleteLast();
+    int exists(char *nodeName) const;
     void printCycle() const;
 };
 

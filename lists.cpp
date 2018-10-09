@@ -199,8 +199,19 @@ void Cycle::deleteLast() {
     }
 }
 
+/* 0: not exists; 1: is startingNode; 2: is another node */
+int Cycle::exists(char *nodeName) const {
+    if (!strcmp(nodeName, startingNodeName)) return 1;
+    EdgeListnode *current = firstEdge;
+    while (current != NULL) {
+        if (!strcmp(nodeName, current->getReceivingNode()->getNodeName())) return 2;
+        current = current->getNextEdge();
+    }
+    return 0;
+}
+
 void Cycle::printCycle() const {
-    cout << "Cir-found |" << startingNodeName << "|";
+    cout << "|" << startingNodeName << "|";
     EdgeListnode *current = firstEdge;
     while (current != NULL) {
         cout << "--" << current->getWeight() << "-->|" << current->getReceivingNode()->getNodeName() << "|";
@@ -246,18 +257,24 @@ void GraphNode::setNextNode(GraphNode *nextNode) {
 }
 
 bool GraphNode::checkNextForCycle(Cycle *visited) {
+    bool foundCycle = false;
     EdgeListnode *currentEdge = edges->getFirstEdge();
     while (currentEdge != NULL) {
-        visited->insertUnordered(currentEdge->getReceivingNode(), currentEdge->getWeight());
-        if (!strcmp(currentEdge->getReceivingNode()->getNodeName(), visited->getStartingNodeName())) {         // cycle found
+        int existsRes = visited->exists(currentEdge->getReceivingNode()->getNodeName());
+        if (existsRes == 1) {         // cycle found with startingNode
+            foundCycle = true;
+            visited->insertUnordered(currentEdge->getReceivingNode(), currentEdge->getWeight());
+            cout << " Cir-found ";
             visited->printCycle();
-            return true;
+            visited->deleteLast();
+        } else if (existsRes == 0) {        // no cycle - check next
+            visited->insertUnordered(currentEdge->getReceivingNode(), currentEdge->getWeight());
+            foundCycle = currentEdge->getReceivingNode()->checkNextForCycle(visited);
+            visited->deleteLast();
         }
-        currentEdge->getReceivingNode()->checkNextForCycle(visited);
-        visited->deleteLast();
         currentEdge = currentEdge->getNextEdge();
     }
-    return false;
+    return foundCycle;
 }
 
 
@@ -443,8 +460,8 @@ void Graph::circlefind(char *nodeName) const {
         return;
     }
     Cycle *visited = new Cycle(nodeName);
-    node->checkNextForCycle(visited);
-
-
+    if (! node->checkNextForCycle(visited)) {
+        cout << " No-circle-found for node |" << nodeName << "|" << endl;
+    }
     delete visited;
 }

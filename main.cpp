@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
         }
         try {
             while (getline(&buffer, &bufsize, inputfp) != -1) {
-                if (!strcmp(buffer, "") || !strcmp(buffer, "\n")) continue;       // skip empty lines
+                if (!strcmp(buffer, "") || !strcmp(buffer, "\n") || !strcmp(buffer, "\r\n")) continue;       // skip empty lines
                 bufferptr = buffer;
                 Ni = strtok(buffer, " \t");
                 Nj = strtok(NULL, " \t");
