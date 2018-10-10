@@ -7,29 +7,37 @@
 using namespace std;
 
 // EdgeListNode methods:
-EdgeListnode::EdgeListnode(GraphNode *receivingNode, int weight, EdgeListnode *nextEdge) :
-        receivingNode(receivingNode), weight(weight), nextEdge(nextEdge) {}
+Edge::Edge(Node *receivingNode, int weight, Edge *nextEdge) :
+        receivingNode(receivingNode), weight(weight), nextEdge(nextEdge), visited(false) {}
 
-EdgeListnode::~EdgeListnode() {};
+Edge::~Edge() {};
 
-GraphNode *EdgeListnode::getReceivingNode() const {
+Node *Edge::getReceivingNode() const {
     return receivingNode;
 }
 
-int EdgeListnode::getWeight() const {
+int Edge::getWeight() const {
     return weight;
 }
 
-void EdgeListnode::setWeight(int weight) {
-    EdgeListnode::weight = weight;
+void Edge::setWeight(int weight) {
+    Edge::weight = weight;
 }
 
-EdgeListnode *EdgeListnode::getNextEdge() const {
+Edge *Edge::getNextEdge() const {
     return nextEdge;
 }
 
-void EdgeListnode::setNextEdge(EdgeListnode *nextEdge) {
-    EdgeListnode::nextEdge = nextEdge;
+void Edge::setNextEdge(Edge *nextEdge) {
+    Edge::nextEdge = nextEdge;
+}
+
+bool Edge::getVisited() const {
+    return visited;
+}
+
+void Edge::setVisited(bool visited) {
+    Edge::visited = visited;
 }
 
 
@@ -37,7 +45,7 @@ void EdgeListnode::setNextEdge(EdgeListnode *nextEdge) {
 EdgeList::EdgeList() : firstEdge(NULL) {}
 
 EdgeList::~EdgeList() {
-    EdgeListnode *current = firstEdge, *next;
+    Edge *current = firstEdge, *next;
     while (current != NULL) {
         next = current->getNextEdge();
         delete current;
@@ -45,46 +53,46 @@ EdgeList::~EdgeList() {
     }
 }
 
-EdgeListnode *EdgeList::getFirstEdge() const {
+Edge *EdgeList::getFirstEdge() const {
     return firstEdge;
 }
 
-void EdgeList::setFirstEdge(EdgeListnode *firstEdge) {
+void EdgeList::setFirstEdge(Edge *firstEdge) {
     EdgeList::firstEdge = firstEdge;
 }
 
 void EdgeList::print(std::ostream& outstream) const {
-    EdgeListnode *current = firstEdge;
+    Edge *current = firstEdge;
     outstream << endl;
     while (current != NULL) {
-        outstream << "\t\t--" << setfill('-') << setw(4) << current->getWeight() << "-->|" << current->getReceivingNode()->getNodeName() << "|" << endl;
+        outstream << "\t\t-" << current->getWeight() << "->|" << current->getReceivingNode()->getNodeName() << "|" << endl;
         current = current->getNextEdge();
     }
     outstream << endl;
 }
 
-void EdgeList::insertEdge(GraphNode *toNode, int weight) {
+void EdgeList::insertEdge(Node *toNode, int weight) {
     try {
-        EdgeListnode *current = firstEdge, *prev = firstEdge;
+        Edge *current = firstEdge, *prev = firstEdge;
         while (current != NULL && strcmp(current->getReceivingNode()->getNodeName(), toNode->getNodeName()) < 0) {
             prev = current;
             current = current->getNextEdge();
         }
         if (current == firstEdge) {     // insert at start
-            firstEdge = new EdgeListnode(toNode, weight, firstEdge);
+            firstEdge = new Edge(toNode, weight, firstEdge);
             return;
         }
         if (current != NULL) {
             // just reached edge's assumed position
-            prev->setNextEdge(new EdgeListnode(toNode, weight, current));
+            prev->setNextEdge(new Edge(toNode, weight, current));
         } else {    // reached the end of the list
-            prev->setNextEdge(new EdgeListnode(toNode, weight, NULL));
+            prev->setNextEdge(new Edge(toNode, weight, NULL));
         }
     } catch (bad_alloc& e) { throw; }
 }
 
 int EdgeList::deleteAllEdges(char *toNodeName) {
-    EdgeListnode *current = firstEdge, *prev = firstEdge;
+    Edge *current = firstEdge, *prev = firstEdge;
     while (current != NULL && strcmp(current->getReceivingNode()->getNodeName(), toNodeName) < 0) {
         prev = current;
         current = current->getNextEdge();
@@ -109,7 +117,7 @@ int EdgeList::deleteAllEdges(char *toNodeName) {
 }
 
 int EdgeList::deleteEdgesWithWeight(char *toNodeName, int weight) {
-    EdgeListnode *current = firstEdge, *prev = firstEdge;
+    Edge *current = firstEdge, *prev = firstEdge;
     while (current != NULL && strcmp(current->getReceivingNode()->getNodeName(), toNodeName) < 0) {
         prev = current;
         current = current->getNextEdge();
@@ -132,7 +140,7 @@ int EdgeList::deleteEdgesWithWeight(char *toNodeName, int weight) {
 }
 
 int EdgeList::modifyEdge(char *toNodeName, int weight, int nweight) {
-    EdgeListnode *current = firstEdge;
+    Edge *current = firstEdge;
     while (current != NULL && strcmp(current->getReceivingNode()->getNodeName(), toNodeName) < 0) {
         current = current->getNextEdge();
     }
@@ -147,8 +155,16 @@ int EdgeList::modifyEdge(char *toNodeName, int weight, int nweight) {
     return result;
 }
 
+void EdgeList::resetAllVisited() {
+    Edge *current = firstEdge;
+    while (current != NULL) {
+        current->setVisited(false);
+        current = current->getNextEdge();
+    }
+}
+
 bool EdgeList::printTransactionsTo(char *fromNodeName, char *toNodeName) const {
-    EdgeListnode *current = firstEdge;
+    Edge *current = firstEdge;
     while (current != NULL && strcmp(current->getReceivingNode()->getNodeName(), toNodeName) < 0) {
         current = current->getNextEdge();
     }
@@ -164,26 +180,30 @@ bool EdgeList::printTransactionsTo(char *fromNodeName, char *toNodeName) const {
 
 
 // Cycle methods
-Cycle::Cycle(GraphNode *startingNode) : EdgeList(), startingNode(startingNode), lastEdge(NULL) {}
+Cycle::Cycle(Node *startingNode) : EdgeList(), startingNode(startingNode), lastEdge(NULL) {}
 
-GraphNode *Cycle::getStartingNode() const {
+Node *Cycle::getStartingNode() const {
     return startingNode;
 }
 
-void Cycle::insertUnordered(GraphNode *toNode, int weight) {
+Edge *Cycle::getLastEdge() const {
+    return lastEdge;
+}
+
+void Cycle::insertUnordered(Node *toNode, int weight) {
     try {
         if (firstEdge == NULL) {
-            firstEdge = new EdgeListnode(toNode, weight, NULL);
+            firstEdge = new Edge(toNode, weight, NULL);
             lastEdge = firstEdge;
         } else {
-            lastEdge->setNextEdge(new EdgeListnode(toNode, weight, NULL));
+            lastEdge->setNextEdge(new Edge(toNode, weight, NULL));
             lastEdge = lastEdge->getNextEdge();
         }
     } catch (bad_alloc& e) { throw; }
 }
 
 void Cycle::deleteLast() {
-    EdgeListnode *current = firstEdge;
+    Edge *current = firstEdge;
     while (current != NULL && current != lastEdge && current->getNextEdge() != lastEdge) {     // current should be the penultimate edge (or firstedge)
         current = current->getNextEdge();
     }
@@ -200,9 +220,9 @@ void Cycle::deleteLast() {
 }
 
 /* 0: not exists; 1: is startingNode; 2: is another node */
-int Cycle::nodeExists(GraphNode *node) const {
+int Cycle::nodeExists(Node *node) const {
     if (startingNode == node) return 1;
-    EdgeListnode *current = firstEdge;
+    Edge *current = firstEdge;
     while (current != NULL) {
         if (current->getReceivingNode() == node) return 2;
         current = current->getNextEdge();
@@ -210,18 +230,20 @@ int Cycle::nodeExists(GraphNode *node) const {
     return 0;
 }
 
-bool Cycle::edgeExists(EdgeListnode *edge) const {
-    EdgeListnode *current = firstEdge;
-    while (current != NULL) {
-        if (current == edge) return true;
-        current = current->getNextEdge();
+bool Cycle::edgeExists(Node *fromNode, Node *toNode, int weight) const {
+    Node *currentFromNode = startingNode;
+    Edge *currentEdge = firstEdge;
+    while (currentEdge != NULL) {
+        if (currentFromNode == fromNode && currentEdge->getReceivingNode() == toNode && currentEdge->getWeight() == weight) return true;
+        currentFromNode = currentEdge->getReceivingNode();
+        currentEdge = currentEdge->getNextEdge();
     }
     return false;
 }
 
 void Cycle::printCycle() const {
     cout << "|" << startingNode->getNodeName() << "|";
-    EdgeListnode *current = firstEdge;
+    Edge *current = firstEdge;
     while (current != NULL) {
         cout << "-" << current->getWeight() << "->|" << current->getReceivingNode()->getNodeName() << "|";
         current = current->getNextEdge();
@@ -230,8 +252,8 @@ void Cycle::printCycle() const {
 }
 
 
-// NodeListNode methods:
-GraphNode::GraphNode(char *nodeName, GraphNode *nextNode) :
+// Node methods:
+Node::Node(char *nodeName, Node *nextNode) :
         nextNode(nextNode) {
     try {
         this->nodeName = new char[strlen(nodeName) + 1];
@@ -244,30 +266,30 @@ GraphNode::GraphNode(char *nodeName, GraphNode *nextNode) :
     }
 }
 
-GraphNode::~GraphNode() {
+Node::~Node() {
     delete edges;
     delete[] nodeName;
 }
 
-char *GraphNode::getNodeName() const {
+char *Node::getNodeName() const {
     return nodeName;
 }
 
-EdgeList *GraphNode::getEdges() const {
+EdgeList *Node::getEdges() const {
     return edges;
 }
 
-GraphNode *GraphNode::getNextNode() const {
+Node *Node::getNextNode() const {
     return nextNode;
 }
 
-void GraphNode::setNextNode(GraphNode *nextNode) {
-    GraphNode::nextNode = nextNode;
+void Node::setNextNode(Node *nextNode) {
+    Node::nextNode = nextNode;
 }
 
-bool GraphNode::simpleCycleCheck(Cycle *visited) {
+bool Node::simpleCycleCheck(Cycle *visited) {
     bool foundCycle = false;
-    EdgeListnode *currentEdge = edges->getFirstEdge();
+    Edge *currentEdge = edges->getFirstEdge();
     while (currentEdge != NULL) {
         int existsRes = visited->nodeExists(currentEdge->getReceivingNode());
         try {
@@ -291,28 +313,27 @@ bool GraphNode::simpleCycleCheck(Cycle *visited) {
     return foundCycle;
 }
 
-bool GraphNode::cyclicTransactionCheck(Cycle *visited, int k) {
+bool Node::cyclicTransactionCheck(Cycle *visited, int k) {
     bool foundCycle = false;
-    EdgeListnode *currentEdge = edges->getFirstEdge();
+    Edge *currentEdge = edges->getFirstEdge();
     while (currentEdge != NULL) {
         if (currentEdge->getWeight() >= k) {         // else abandon path
-//        int existsRes = visited->nodeExists(
-//                currentEdge->getReceivingNode()->getNodeName());
             try {
-                if (visited->edgeExists(currentEdge)) {
-                    foundCycle = true;
-                    visited->insertUnordered(currentEdge->getReceivingNode(),
-                                             currentEdge->getWeight());
-                    cout << " Cir-found ";
-                    visited->printCycle();
-                    visited->deleteLast();
+                if (currentEdge->getVisited()) {
+                    if (visited->getLastEdge()->getReceivingNode() == visited->getStartingNode()) {
+                        cout << " Cir-found ";
+                        visited->printCycle();
+                        return true;
+                    }
                 } else {
+                    currentEdge->setVisited(true);
                     visited->insertUnordered(currentEdge->getReceivingNode(),
                                              currentEdge->getWeight());
                     foundCycle =
-                            currentEdge->getReceivingNode()->simpleCycleCheck(
-                                    visited) || foundCycle;
+                            currentEdge->getReceivingNode()->cyclicTransactionCheck(
+                                    visited, k) || foundCycle;
                     visited->deleteLast();
+                    currentEdge->setVisited(false);
                 }
             } catch (bad_alloc &) { throw; }
         }
@@ -326,7 +347,7 @@ bool GraphNode::cyclicTransactionCheck(Cycle *visited, int k) {
 Graph::Graph() : firstNode(NULL) {}
 
 Graph::~Graph() {
-    GraphNode *current = firstNode, *next;
+    Node *current = firstNode, *next;
     while (current != NULL) {
         next = current->getNextNode();
         delete current;
@@ -334,16 +355,16 @@ Graph::~Graph() {
     }
 }
 
-GraphNode *Graph::getFirstNode() const {
+Node *Graph::getFirstNode() const {
     return firstNode;
 }
 
-void Graph::setFirstNode(GraphNode *firstNode) {
+void Graph::setFirstNode(Node *firstNode) {
     Graph::firstNode = firstNode;
 }
 
 void Graph::print(std::ostream& outstream) const {
-    GraphNode *current = firstNode;
+    Node *current = firstNode;
     while (current != NULL) {
         outstream << " |" << current->getNodeName() << "|";
         current->getEdges()->print(outstream);
@@ -351,8 +372,8 @@ void Graph::print(std::ostream& outstream) const {
     }
 }
 
-GraphNode *Graph::getNodeByName(char *nodeName) const {
-    GraphNode *current = firstNode;
+Node *Graph::getNodeByName(char *nodeName) const {
+    Node *current = firstNode;
     while (current != NULL && strcmp(current->getNodeName(), nodeName) < 0) {
         current = current->getNextNode();
     }
@@ -364,26 +385,26 @@ GraphNode *Graph::getNodeByName(char *nodeName) const {
     return current;
 }
 
-GraphNode *Graph::insertNode(char *nodeName) {        // returns the created node
+Node *Graph::insertNode(char *nodeName) {        // returns the created node
     try {
-        GraphNode *current = firstNode, *prev = firstNode;
+        Node *current = firstNode, *prev = firstNode;
         while (current != NULL && strcmp(current->getNodeName(), nodeName) < 0) {
             prev = current;
             current = current->getNextNode();
         }
         if (current == firstNode && (current == NULL || strcmp(current->getNodeName(), nodeName) != 0)) {     // insert at start
-            firstNode = new GraphNode(nodeName, firstNode);
+            firstNode = new Node(nodeName, firstNode);
             return firstNode;
         }
         if (current != NULL) {
             if (strcmp(current->getNodeName(), nodeName) == 0) {        // node already exists
                 return NULL;
             } else {        // just surpassed where the node would have been found, if it existed
-                prev->setNextNode(new GraphNode(nodeName, current));
+                prev->setNextNode(new Node(nodeName, current));
                 return prev->getNextNode();
             }
         } else {    // reached the end of the list
-            prev->setNextNode(new GraphNode(nodeName, NULL));
+            prev->setNextNode(new Node(nodeName, NULL));
             return prev->getNextNode();
         }
     } catch (bad_alloc&) { throw; }
@@ -393,17 +414,17 @@ void Graph::insertEdge(char *fromNodeName, char *toNodeName, int weight) {
     /* Similar algorithm to insertNode() - if fromNode isn't found we create it and then insert the edge.
      * In either case, toNode is first created if it doesn't exist. */
     try {
-        GraphNode *toNode = insertNode(toNodeName);
+        Node *toNode = insertNode(toNodeName);
         if (toNode == NULL) {       // toNode already existed
             toNode = getNodeByName(toNodeName);
         }
-        GraphNode *current = firstNode, *prev = firstNode;
+        Node *current = firstNode, *prev = firstNode;
         while (current != NULL && strcmp(current->getNodeName(), fromNodeName) < 0) {
             prev = current;
             current = current->getNextNode();
         }
         if (current == firstNode && (current == NULL || strcmp(current->getNodeName(), fromNodeName) != 0)) {     // insert at start
-            firstNode = new GraphNode(fromNodeName, firstNode);
+            firstNode = new Node(fromNodeName, firstNode);
             firstNode->getEdges()->insertEdge(toNode, weight);
             return;
         }
@@ -411,11 +432,11 @@ void Graph::insertEdge(char *fromNodeName, char *toNodeName, int weight) {
             if (strcmp(current->getNodeName(), fromNodeName) == 0) {
                 current->getEdges()->insertEdge(toNode, weight);
             } else {        // just surpassed where the node would have been found, if it existed
-                prev->setNextNode(new GraphNode(fromNodeName, current));
+                prev->setNextNode(new Node(fromNodeName, current));
                 prev->getNextNode()->getEdges()->insertEdge(toNode, weight);
             }
         } else {    // reached the end of the list
-            prev->setNextNode(new GraphNode(fromNodeName, NULL));
+            prev->setNextNode(new Node(fromNodeName, NULL));
             prev->getNextNode()->getEdges()->insertEdge(toNode, weight);
         }
     } catch (bad_alloc&) { throw; }
@@ -423,7 +444,7 @@ void Graph::insertEdge(char *fromNodeName, char *toNodeName, int weight) {
 
 bool Graph::deleteNode(char *nodeName) {
     if (firstNode == NULL) return false;        // if list is empty
-    GraphNode *current = firstNode, *prev = firstNode;
+    Node *current = firstNode, *prev = firstNode;
     while (current != NULL && strcmp(current->getNodeName(), nodeName) < 0) {
         prev = current;
         current = current->getNextNode();
@@ -433,7 +454,7 @@ bool Graph::deleteNode(char *nodeName) {
         return false;
     }
     // node found
-    GraphNode *i = firstNode;
+    Node *i = firstNode;
     while (i != NULL) {
         i->getEdges()->deleteAllEdges(nodeName);
         i = i->getNextNode();
@@ -448,7 +469,7 @@ bool Graph::deleteNode(char *nodeName) {
 }
 
 int Graph::deleteAllEdges(char *fromNodeName, char *toNodeName) {
-    GraphNode *fromNode = getNodeByName(fromNodeName);
+    Node *fromNode = getNodeByName(fromNodeName);
     if (fromNode == NULL) {
         return -1;
     }
@@ -459,7 +480,7 @@ int Graph::deleteAllEdges(char *fromNodeName, char *toNodeName) {
 }
 
 int Graph::deleteEdgesWithWeight(char *fromNodeName, char *toNodeName, int weight) {
-    GraphNode *fromNode = getNodeByName(fromNodeName);
+    Node *fromNode = getNodeByName(fromNodeName);
     if (fromNode == NULL) {
         return -1;
     }
@@ -470,7 +491,7 @@ int Graph::deleteEdgesWithWeight(char *fromNodeName, char *toNodeName, int weigh
 }
 
 int Graph::modifyEdge(char *fromName, char *toNodeName, int weight, int nweight) {
-    GraphNode *fromNode = getNodeByName(fromName);
+    Node *fromNode = getNodeByName(fromName);
     if (fromNode == NULL) {
         return -1;
     }
@@ -481,12 +502,12 @@ int Graph::modifyEdge(char *fromName, char *toNodeName, int weight, int nweight)
 }
 
 void Graph::printReceiving(char *nodeName) const {
-    GraphNode *toNode = getNodeByName(nodeName);
+    Node *toNode = getNodeByName(nodeName);
     if (toNode == NULL) {
         cout << " |" << nodeName << "| does not exist - abort-r;" << endl;
         return;
     }
-    GraphNode *current = firstNode;
+    Node *current = firstNode;
     bool printed = false;
     while (current != NULL) {
         printed = (current->getEdges()->printTransactionsTo(current->getNodeName(), nodeName)) || printed;      // prints and updates flag
@@ -498,7 +519,7 @@ void Graph::printReceiving(char *nodeName) const {
 }
 
 void Graph::circlefind(char *nodeName) const {
-    GraphNode *node = getNodeByName(nodeName);
+    Node *node = getNodeByName(nodeName);
     if (node == NULL) {
         cout << " |" << nodeName << "| does not exist - abort-c;" << endl;
         return;
@@ -514,7 +535,7 @@ void Graph::circlefind(char *nodeName) const {
 }
 
 void Graph::findcircles(char *nodeName, int k) const {
-    GraphNode *node = getNodeByName(nodeName);
+    Node *node = getNodeByName(nodeName);
     if (node == NULL) {
         cout << " |" << nodeName << "| does not exist - abort-f;" << endl;
         return;

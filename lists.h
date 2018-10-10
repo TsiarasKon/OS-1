@@ -5,76 +5,81 @@
 
 // forward declarations
 class Graph;
-class GraphNode;
+class Node;
 
-class EdgeListnode {
-    GraphNode *receivingNode;
+class Edge {
+    Node *receivingNode;
     int weight;
-    EdgeListnode *nextEdge;
+    Edge *nextEdge;
+    bool visited;
 public:
-    EdgeListnode(GraphNode *receivingNode, int weight, EdgeListnode *nextEdge);
-    ~EdgeListnode();
-    GraphNode *getReceivingNode() const;
+    Edge(Node *receivingNode, int weight, Edge *nextEdge);
+    ~Edge();
+    Node *getReceivingNode() const;
     int getWeight() const;
     void setWeight(int weight);
-    EdgeListnode *getNextEdge() const;
-    void setNextEdge(EdgeListnode *nextEdge);
+    Edge *getNextEdge() const;
+    void setNextEdge(Edge *nextEdge);
+    bool getVisited() const;
+    void setVisited(bool visited);
 };
 
 class EdgeList {
 protected:
-    EdgeListnode *firstEdge;
+    Edge *firstEdge;
 public:
     EdgeList();
     ~EdgeList();
-    EdgeListnode *getFirstEdge() const;
-    void setFirstEdge(EdgeListnode *firstEdge);
+    Edge *getFirstEdge() const;
+    void setFirstEdge(Edge *firstEdge);
     void print(std::ostream& outstream) const;
-    void insertEdge(GraphNode *toNode, int weight);
+    void insertEdge(Node *toNode, int weight);
     int deleteAllEdges(char *toNodeName);
     int deleteEdgesWithWeight(char *toNodeName, int weight);
     int modifyEdge(char *toNodeName, int weight, int nweight);
+    void resetAllVisited();
     bool printTransactionsTo(char *fromNodeName, char *toNodeName) const;
 };
 
 class Cycle : public EdgeList {
-    GraphNode *startingNode;
-    EdgeListnode *lastEdge;
+    Node *startingNode;
+    Edge *lastEdge;
 public:
-    explicit Cycle(GraphNode *startingNode);
-    GraphNode *getStartingNode() const;
-    void insertUnordered(GraphNode *toNode, int weight);
+    explicit Cycle(Node *startingNode);
+    Node *getStartingNode() const;
+    Edge *getLastEdge() const;
+    void insertUnordered(Node *toNode, int weight);
     void deleteLast();
-    int nodeExists(GraphNode *node) const;
-    bool edgeExists(EdgeListnode *edge) const;
+    int nodeExists(Node *node) const;
+    bool edgeExists(Node *fromNode, Node *toNode, int weight) const;
     void printCycle() const;
 };
 
-class GraphNode {
+class Node {
     char *nodeName;
     EdgeList *edges;
-    GraphNode *nextNode;
+    Node *nextNode;
 public:
-    GraphNode(char *nodeName, GraphNode *nextNode);
-    ~GraphNode();
+    Node(char *nodeName, Node *nextNode);
+    ~Node();
     char *getNodeName() const;
     EdgeList *getEdges() const;
-    GraphNode *getNextNode() const;
-    void setNextNode(GraphNode *nextNode);
+    Node *getNextNode() const;
+    void setNextNode(Node *nextNode);
     bool simpleCycleCheck(Cycle *visited);
     bool cyclicTransactionCheck(Cycle *visited, int weight);
 };
 
 class Graph {
-    GraphNode *firstNode;
+    Node *firstNode;
 public:
     Graph();
     ~Graph();
-    GraphNode *getFirstNode() const;
-    void setFirstNode(GraphNode *firstNode);
+    Node *getFirstNode() const;
+    void setFirstNode(Node *firstNode);
     void print(std::ostream& outstream) const;
-    GraphNode *getNodeByName(char *nodeName) const;
-    GraphNode *insertNode(char *nodeName);
+    Node *getNodeByName(char *nodeName) const;
+    Node *insertNode(char *nodeName);
     void insertEdge(char *fromNodeName, char *toNodeName, int weight);
     bool deleteNode(char *nodeName);
     int deleteAllEdges(char *fromName, char *toNodeName);
