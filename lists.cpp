@@ -164,10 +164,10 @@ bool EdgeList::printTransactionsTo(char *fromNodeName, char *toNodeName) const {
 
 
 // Cycle methods
-Cycle::Cycle(char *startingNodeName) : EdgeList(), startingNodeName(startingNodeName), lastEdge(NULL) {}
+Cycle::Cycle(GraphNode *startingNode) : EdgeList(), startingNode(startingNode), lastEdge(NULL) {}
 
-char *Cycle::getStartingNodeName() const {
-    return startingNodeName;
+GraphNode *Cycle::getStartingNode() const {
+    return startingNode;
 }
 
 void Cycle::insertUnordered(GraphNode *toNode, int weight) {
@@ -200,21 +200,30 @@ void Cycle::deleteLast() {
 }
 
 /* 0: not exists; 1: is startingNode; 2: is another node */
-int Cycle::exists(char *nodeName) const {
-    if (!strcmp(nodeName, startingNodeName)) return 1;
+int Cycle::nodeExists(GraphNode *node) const {
+    if (startingNode == node) return 1;
     EdgeListnode *current = firstEdge;
     while (current != NULL) {
-        if (!strcmp(nodeName, current->getReceivingNode()->getNodeName())) return 2;
+        if (current->getReceivingNode() == node) return 2;
         current = current->getNextEdge();
     }
     return 0;
 }
 
-void Cycle::printCycle() const {
-    cout << "|" << startingNodeName << "|";
+bool Cycle::edgeExists(EdgeListnode *edge) const {
     EdgeListnode *current = firstEdge;
     while (current != NULL) {
-        cout << "--" << current->getWeight() << "-->|" << current->getReceivingNode()->getNodeName() << "|";
+        if (current == edge) return true;
+        current = current->getNextEdge();
+    }
+    return false;
+}
+
+void Cycle::printCycle() const {
+    cout << "|" << startingNode->getNodeName() << "|";
+    EdgeListnode *current = firstEdge;
+    while (current != NULL) {
+        cout << "-" << current->getWeight() << "->|" << current->getReceivingNode()->getNodeName() << "|";
         current = current->getNextEdge();
     }
     cout << endl;
@@ -256,21 +265,56 @@ void GraphNode::setNextNode(GraphNode *nextNode) {
     GraphNode::nextNode = nextNode;
 }
 
-bool GraphNode::checkNextForCycle(Cycle *visited) {
+bool GraphNode::simpleCycleCheck(Cycle *visited) {
     bool foundCycle = false;
     EdgeListnode *currentEdge = edges->getFirstEdge();
     while (currentEdge != NULL) {
-        int existsRes = visited->exists(currentEdge->getReceivingNode()->getNodeName());
-        if (existsRes == 1) {         // cycle found with startingNode
-            foundCycle = true;
-            visited->insertUnordered(currentEdge->getReceivingNode(), currentEdge->getWeight());
-            cout << " Cir-found ";
-            visited->printCycle();
-            visited->deleteLast();
-        } else if (existsRes == 0) {        // no cycle - check next
-            visited->insertUnordered(currentEdge->getReceivingNode(), currentEdge->getWeight());
-            foundCycle = currentEdge->getReceivingNode()->checkNextForCycle(visited);
-            visited->deleteLast();
+        int existsRes = visited->nodeExists(currentEdge->getReceivingNode());
+        try {
+            if (existsRes == 1) {         // cycle found with startingNode
+                foundCycle = true;
+                visited->insertUnordered(currentEdge->getReceivingNode(),
+                                         currentEdge->getWeight());
+                cout << " Cir-found ";
+                visited->printCycle();
+                visited->deleteLast();
+            } else if (existsRes == 0) {        // no cycle - check next
+                visited->insertUnordered(currentEdge->getReceivingNode(),
+                                         currentEdge->getWeight());
+                foundCycle = currentEdge->getReceivingNode()->simpleCycleCheck(
+                        visited) || foundCycle;
+                visited->deleteLast();
+            }
+        } catch (bad_alloc&) { throw; }
+        currentEdge = currentEdge->getNextEdge();
+    }
+    return foundCycle;
+}
+
+bool GraphNode::cyclicTransactionCheck(Cycle *visited, int k) {
+    bool foundCycle = false;
+    EdgeListnode *currentEdge = edges->getFirstEdge();
+    while (currentEdge != NULL) {
+        if (currentEdge->getWeight() >= k) {         // else abandon path
+//        int existsRes = visited->nodeExists(
+//                currentEdge->getReceivingNode()->getNodeName());
+            try {
+                if (visited->edgeExists(currentEdge)) {
+                    foundCycle = true;
+                    visited->insertUnordered(currentEdge->getReceivingNode(),
+                                             currentEdge->getWeight());
+                    cout << " Cir-found ";
+                    visited->printCycle();
+                    visited->deleteLast();
+                } else {
+                    visited->insertUnordered(currentEdge->getReceivingNode(),
+                                             currentEdge->getWeight());
+                    foundCycle =
+                            currentEdge->getReceivingNode()->simpleCycleCheck(
+                                    visited) || foundCycle;
+                    visited->deleteLast();
+                }
+            } catch (bad_alloc &) { throw; }
         }
         currentEdge = currentEdge->getNextEdge();
     }
@@ -459,9 +503,28 @@ void Graph::circlefind(char *nodeName) const {
         cout << " |" << nodeName << "| does not exist - abort-c;" << endl;
         return;
     }
-    Cycle *visited = new Cycle(nodeName);
-    if (! node->checkNextForCycle(visited)) {
-        cout << " No-circle-found for node |" << nodeName << "|" << endl;
+    Cycle *visited;
+    try {
+        visited = new Cycle(node);
+        if (!node->simpleCycleCheck(visited)) {
+            cout << " No-circle-found |" << nodeName << "|" << endl;
+        }
+    } catch (bad_alloc&) { throw; }
+    delete visited;
+}
+
+void Graph::findcircles(char *nodeName, int k) const {
+    GraphNode *node = getNodeByName(nodeName);
+    if (node == NULL) {
+        cout << " |" << nodeName << "| does not exist - abort-f;" << endl;
+        return;
     }
+    Cycle *visited;
+    try {
+    visited = new Cycle(node);
+        if (!node->cyclicTransactionCheck(visited, k)) {
+            cout << " No-circle-found invloving |" << nodeName << "|" << endl;
+        }
+    } catch (bad_alloc&) { throw; }
     delete visited;
 }

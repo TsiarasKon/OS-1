@@ -122,7 +122,7 @@ void interface(Graph *graph) {
                 if (Ni == NULL || weight == NULL) {
                     cout << cmdErrorMsg;
                 } else {
-//                    graph->findcircles(Ni, weight);
+                    graph->findcircles(Ni, atoi(weight));
                 }
             } else if (!strcmp(command, "t")) {
                 Ni = strtok(NULL, " ");

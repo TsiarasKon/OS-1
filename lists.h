@@ -38,14 +38,15 @@ public:
 };
 
 class Cycle : public EdgeList {
-    char *startingNodeName;
+    GraphNode *startingNode;
     EdgeListnode *lastEdge;
 public:
-    explicit Cycle(char *startingNodeName);
-    char *getStartingNodeName() const;
+    explicit Cycle(GraphNode *startingNode);
+    GraphNode *getStartingNode() const;
     void insertUnordered(GraphNode *toNode, int weight);
     void deleteLast();
-    int exists(char *nodeName) const;
+    int nodeExists(GraphNode *node) const;
+    bool edgeExists(EdgeListnode *edge) const;
     void printCycle() const;
 };
 
@@ -60,7 +61,8 @@ public:
     EdgeList *getEdges() const;
     GraphNode *getNextNode() const;
     void setNextNode(GraphNode *nextNode);
-    bool checkNextForCycle(Cycle *visited);
+    bool simpleCycleCheck(Cycle *visited);
+    bool cyclicTransactionCheck(Cycle *visited, int weight);
 };
 
 class Graph {
@@ -80,6 +82,7 @@ public:
     int modifyEdge(char *fromName, char *toNodeName, int weight, int nweight);
     void printReceiving(char *nodeName) const;
     void circlefind(char *nodeName) const;
+    void findcircles(char *nodeName, int k) const;
 };
 
 #endif
