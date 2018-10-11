@@ -10,9 +10,10 @@ using namespace std;
 void interface(Graph *graph) {
     size_t bufsize;
     char *buffer = NULL, *bufferptr = NULL;
-    char *Ni, *Nj, *weight;
-    char *command;
-    const char cmdErrorMsg[] = " Invalid command format - Type \"h\" for the correct format\n";
+    char *Ni, *Nj, *weightStr, *command, *strtolEndptr;
+    int weight;
+    const char cmdGenericErrorMsg[] = " Invalid command format - Type \"h\" for the correct format\n";
+    const char cmdWeightErrorMsg[] = " Invalid command format: Weight must be an integer - Type \"h\" for the correct format\n";
     cout << endl << "Type a command: ";
     try {
         while (getline(&buffer, &bufsize, stdin) != -1) {           // effectively an infinite loop
@@ -24,29 +25,33 @@ void interface(Graph *graph) {
             if (!strcmp(command, "i")) {
                 Ni = strtok(NULL, " ");
                 if (Ni == NULL) {
-                    cout << cmdErrorMsg;
+                    cout << cmdGenericErrorMsg;
                 } else {
-                    graph->insertNode(Ni);
                     if (graph->insertNode(Ni) != NULL) {
                         cout << " Inserted |" << Ni << "|" << endl;
                     } else {
-                        cout << " Node |" << Ni << "| already exists;" << endl;
+                        cout << " Node |" << Ni << "| Exists;" << endl;
                     }
                 }
             } else if (!strcmp(command, "n")) {
                 Ni = strtok(NULL, " ");
                 Nj = strtok(NULL, " ");
-                weight = strtok(NULL, " ");
-                if (Ni == NULL || Nj == NULL || weight == NULL) {
-                    cout << cmdErrorMsg;
+                weightStr = strtok(NULL, " ");
+                if (Ni == NULL || Nj == NULL || weightStr == NULL) {
+                    cout << cmdGenericErrorMsg;
                 } else {
-                    graph->insertEdge(Ni, Nj, atoi(weight));
-                    cout << " Inserted |" << Ni << "|--" << weight << "-->|" << Nj << "|" << endl;
+                    weight = (int) strtol(weightStr, &strtolEndptr, 10);
+                    if (*strtolEndptr != '\0') {
+                        cout << cmdWeightErrorMsg;
+                    } else {
+                        graph->insertEdge(Ni, Nj, weight);
+                        cout << " Inserted |" << Ni << "|->" << weightStr << "->|" << Nj << "|" << endl;
+                    }
                 }
             } else if (!strcmp(command, "d")) {
                 Ni = strtok(NULL, " ");
                 if (Ni == NULL) {
-                    cout << cmdErrorMsg;
+                    cout << cmdGenericErrorMsg;
                 } else {
                     if (graph->deleteNode(Ni)) {
                         cout << " Deleted |" << Ni << "|" << endl;
@@ -57,79 +62,106 @@ void interface(Graph *graph) {
             } else if (!strcmp(command, "l")) {
                 Ni = strtok(NULL, " ");
                 Nj = strtok(NULL, " ");
-                weight = strtok(NULL, " ");
+                weightStr = strtok(NULL, " ");
                 if (Ni == NULL || Nj == NULL) {
-                    cout << cmdErrorMsg;
+                    cout << cmdGenericErrorMsg;
                 } else {
-                    int res;
-                    if (weight == NULL) {
+                    int res = -99;
+                    if (weightStr == NULL) {
                         res = graph->deleteAllEdges(Ni, Nj);
                         if (res == 0) {
-                            cout << " Del-all-vertices |" << Ni << "|--->|" << Nj << "|" << endl;
-                        } else if (res == -3) {     // can only happen if weight was specified
+                            cout << " Del-all |" << Ni << "|--->|" << Nj << "|" << endl;
+                        } else if (res == -3) {
                             cout << " No |" << Ni << "|--->|" << Nj << "| exists - abort-l;" << endl;
                         }
                     } else {
-                        res = graph->deleteEdgesWithWeight(Ni, Nj, atoi(weight));
-                        if (res == 0) {
-                            cout << " Del-vertex |" << Ni << "|--" << weight << "-->|" << Nj << "|" << endl;
-                        } else if (res == -3) {     // can only happen if weight was specified
-                            cout << " |" << Ni << "|--" << weight << "-->|" << Nj << "| does not exist - abort-l;" << endl;
+                        weight = (int) strtol(weightStr, &strtolEndptr, 10);
+                        if (*strtolEndptr != '\0') {
+                            cout << cmdWeightErrorMsg;
+                        } else {
+                            res = graph->deleteEdgesWithWeight(Ni, Nj, weight);
+                            if (res == 0) {
+                                cout << " Del-vertex |" << Ni << "|->"
+                                     << weightStr << "->|" << Nj << "|"
+                                     << endl;
+                            } else if (res ==
+                                       -3) {     // can only happen if weight was specified
+                                cout << " |" << Ni << "|->" << weightStr
+                                     << "->|" << Nj
+                                     << "| does not exist - abort-l;" << endl;
+                            }
                         }
                     }
                     if (res == -1) {
-                        cout << " Node |" << Ni << "| does not exist - abort-l;" << endl;
+                        cout << " |" << Ni << "| does not exist - abort-l;" << endl;
                     } else if (res == -2) {
-                        cout << " Node |" << Nj << "| does not exist - abort-l;" << endl;
+                        cout << " |" << Nj << "| does not exist - abort-l;" << endl;
                     }
                 }
             } else if (!strcmp(command, "m")) {
                 Ni = strtok(NULL, " ");
                 Nj = strtok(NULL, " ");
-                weight = strtok(NULL, " ");
-                char *nweight = strtok(NULL, " ");
-                if (Ni == NULL || Nj == NULL || weight == NULL || nweight == NULL) {
-                    cout << cmdErrorMsg;
+                weightStr = strtok(NULL, " ");
+                char *nweightStr = strtok(NULL, " ");
+                char *strtolEndptr2;
+                int nweight;
+                if (Ni == NULL || Nj == NULL || weightStr == NULL || nweightStr == NULL) {
+                    cout << cmdGenericErrorMsg;
                 } else {
-                    int res = graph->modifyEdge(Ni, Nj, atoi(weight), atoi(nweight));
-                    if (res == 0) {
-                        cout << " Mod-vertex |" << Ni << "|--" << nweight << "-->|" << Nj << "|" << endl;
-                    } else if (res == -1) {
-                        cout << " Node |" << Ni << "| does not exist - abort-m;" << endl;
-                    } else if (res == -2) {
-                        cout << " Node |" << Nj << "| does not exist - abort-m;" << endl;
-                    } else if (res == -3) {
-                        cout << " |" << Ni << "|--" << weight << "-->|" << Nj << "| does not exist - abort-m;" << endl;
+                    weight = (int) strtol(weightStr, &strtolEndptr, 10);
+                    nweight = (int) strtol(nweightStr, &strtolEndptr2, 10);
+                    if (*strtolEndptr != '\0' || *strtolEndptr2 != '\0') {
+                        cout << cmdWeightErrorMsg;
+                    } else {
+                        int res = graph->modifyEdge(Ni, Nj, weight, nweight);
+                        if (res == 0) {
+                            cout << " Mod-vertex |" << Ni << "|->" << nweight
+                                 << "->|" << Nj << "|" << endl;
+                        } else if (res == -1) {
+                            cout << " |" << Ni << "| does not exist - abort-m;"
+                                 << endl;
+                        } else if (res == -2) {
+                            cout << " |" << Nj << "| does not exist - abort-m;"
+                                 << endl;
+                        } else if (res == -3) {
+                            cout << " |" << Ni << "|->" << weightStr << "->|"
+                                 << Nj << "| does not exist - abort-m;" << endl;
+                        }
                     }
                 }
             } else if (!strcmp(command, "r")) {
                 Ni = strtok(NULL, " ");
                 if (Ni == NULL) {
-                    cout << cmdErrorMsg;
+                    cout << cmdGenericErrorMsg;
                 } else {
                     graph->printReceiving(Ni);
                 }
             } else if (!strcmp(command, "c")) {
                 Ni = strtok(NULL, " ");
                 if (Ni == NULL) {
-                    cout << cmdErrorMsg;
+                    cout << cmdGenericErrorMsg;
                 } else {
                     graph->circlefind(Ni);
                 }
             } else if (!strcmp(command, "f")) {
                 Ni = strtok(NULL, " ");
-                weight = strtok(NULL, " ");
-                if (Ni == NULL || weight == NULL) {
-                    cout << cmdErrorMsg;
+                weightStr = strtok(NULL, " ");
+                if (Ni == NULL || weightStr == NULL) {
+                    cout << cmdGenericErrorMsg;
                 } else {
-                    graph->findcircles(Ni, atoi(weight));
+                    weight = (int) strtol(weightStr, &strtolEndptr, 10);
+                    if (*strtolEndptr != '\0') {
+                        cout << cmdWeightErrorMsg;
+                    } else {
+                        graph->findcircles(Ni, weight);
+                    }
                 }
             } else if (!strcmp(command, "t")) {
                 Ni = strtok(NULL, " ");
                 Nj = strtok(NULL, " ");
                 char *len = strtok(NULL, " ");
                 if (Ni == NULL || Nj == NULL || len == NULL) {
-                    cout << cmdErrorMsg;
+                    cout << cmdGenericErrorMsg;
                 } else {
 //                    graph->traceflow(Ni, Nj, len);
                 }

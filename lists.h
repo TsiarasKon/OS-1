@@ -38,7 +38,7 @@ public:
     int deleteEdgesWithWeight(char *toNodeName, int weight);
     int modifyEdge(char *toNodeName, int weight, int nweight);
     void resetAllVisited();
-    bool printTransactionsTo(char *fromNodeName, char *toNodeName) const;
+    void printTransactionsTo(char *fromNodeName, char *toNodeName, bool *printed) const;
 };
 
 class Cycle : public EdgeList {
@@ -51,7 +51,6 @@ public:
     void insertUnordered(Node *toNode, int weight);
     void deleteLast();
     int nodeExists(Node *node) const;
-    bool edgeExists(Node *fromNode, Node *toNode, int weight) const;
     void printCycle() const;
 };
 
