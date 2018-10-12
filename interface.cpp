@@ -159,11 +159,16 @@ void interface(Graph *graph) {
             } else if (!strcmp(command, "t")) {
                 Ni = strtok(NULL, " ");
                 Nj = strtok(NULL, " ");
-                char *len = strtok(NULL, " ");
-                if (Ni == NULL || Nj == NULL || len == NULL) {
-                    cout << cmdGenericErrorMsg;
+                char *lenStr = strtok(NULL, " ");
+                if (Ni == NULL || Nj == NULL || lenStr == NULL) {
+                    cout << " Invalid command format: Length must be an integer - Type \"h\" for the correct format\n";
                 } else {
-//                    graph->traceflow(Ni, Nj, len);
+                    int len = (int) strtol(lenStr, &strtolEndptr, 10);
+                    if (*strtolEndptr != '\0') {
+                        cout << cmdWeightErrorMsg;
+                    } else {
+                        graph->traceflow(Ni, Nj, len);
+                    }
                 }
             } else if (!strcmp(command, "p")) {         // bonus: p(rint) command
                 graph->print(cout);

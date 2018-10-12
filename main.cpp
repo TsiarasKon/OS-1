@@ -67,7 +67,8 @@ int main(int argc, char *argv[]) {
     // Load graph from inputfile
     size_t bufsize;
     char *buffer = NULL, *bufferptr = NULL;
-    char *Ni, *Nj, *weight;
+    char *Ni, *Nj, *weightStr, *strtolEndptr;
+    int weight;
     if (inputfilename != NULL) {
         cout << "Loading graph from inputfile ..." << endl;
         FILE *inputfp;
@@ -81,15 +82,21 @@ int main(int argc, char *argv[]) {
             while (getline(&buffer, &bufsize, inputfp) != -1) {
                 if (!strcmp(buffer, "") || !strcmp(buffer, "\n") || !strcmp(buffer, "\r\n")) continue;       // skip empty lines
                 bufferptr = buffer;
+                strtok(buffer, "\r\n");
                 Ni = strtok(buffer, " \t");
                 Nj = strtok(NULL, " \t");
-                weight = strtok(NULL, " \t");
-                if (Ni == NULL || Nj == NULL || weight == NULL) {
-                    cerr << "Invalid inputfile format." << endl;
+                weightStr = strtok(NULL, " \t");
+                if (Ni == NULL || Nj == NULL || weightStr == NULL) {
+                    cout << "Invalid inputfile format." << endl;
                     cleanup(&inputfilename, &outputfilename, &bufferptr, &graph);
                     return EC_FILE;
                 }
-                graph->insertEdge(Ni, Nj, atoi(weight));
+                weight = (int) strtol(weightStr, &strtolEndptr, 10);
+                if (*strtolEndptr != '\0') {
+                    cout << "Invalid inputfile format." << endl;
+                } else {
+                    graph->insertEdge(Ni, Nj, weight);
+                }
                 buffer = bufferptr;     // used to avoid memory leaks due to strtok()
             }
         } catch (bad_alloc &e) {

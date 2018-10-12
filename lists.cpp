@@ -335,6 +335,34 @@ bool Node::cyclicTransactionCheck(Cycle *visited, int k) {
     return foundCycle;
 }
 
+bool Node::traceflowCheck(Cycle *visited, Node *toNode, int len) {
+    if (len < 0) return false;
+    bool foundCycle = false;
+    Edge *currentEdge = edges->getFirstEdge();
+    while (currentEdge != NULL) {
+        try {
+            // if already visited edge or currentNode is toNode, circle found
+            if (currentEdge->getVisited() || (visited->getLastEdge() != NULL && visited->getLastEdge()->getReceivingNode() == toNode)) {
+                if (visited->getLastEdge()->getReceivingNode() == toNode) {
+                    cout << " Tra-found ";
+                    visited->printCycle();
+                    foundCycle = true;
+                }
+            } else {
+                currentEdge->setVisited(true);
+                visited->insertUnordered(currentEdge->getReceivingNode(),
+                                         currentEdge->getWeight());
+                foundCycle =
+                        currentEdge->getReceivingNode()->traceflowCheck(visited, toNode, len - 1) || foundCycle;
+                visited->deleteLast();
+                currentEdge->setVisited(false);
+            }
+        } catch (bad_alloc &) { throw; }
+        currentEdge = currentEdge->getNextEdge();
+    }
+    return foundCycle;
+}
+
 
 // Graph methods:
 Graph::Graph() : firstNode(NULL) {}
@@ -537,7 +565,28 @@ void Graph::findcircles(char *nodeName, int k) const {
     try {
         visited = new Cycle(node);
         if (!node->cyclicTransactionCheck(visited, k)) {
-            cout << " No-circle-found invloving |" << nodeName << "|" << k << endl;
+            cout << " No-circle-found invloving |" << nodeName << "| " << k << endl;
+        }
+    } catch (bad_alloc&) { throw; }
+    delete visited;
+}
+
+void Graph::traceflow(char *fromNodeName, char *toNodeName, int len) const {
+    Node *fromNode = getNodeByName(fromNodeName);
+    if (fromNode == NULL) {
+        cout << " |" << fromNodeName << "| does not exist - abort-t;" << endl;
+        return;
+    }
+    Node *toNode = getNodeByName(toNodeName);
+    if (toNode == NULL) {
+        cout << " |" << toNodeName << "| does not exist - abort-t;" << endl;
+        return;
+    }
+    Cycle *visited;
+    try {
+        visited = new Cycle(fromNode);
+        if (!fromNode->traceflowCheck(visited, toNode, len)) {
+            cout << " No-trace from |" << fromNodeName << "| to |" << toNodeName << "|" << endl;
         }
     } catch (bad_alloc&) { throw; }
     delete visited;

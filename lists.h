@@ -67,6 +67,7 @@ public:
     void setNextNode(Node *nextNode);
     bool simpleCycleCheck(Cycle *visited);
     bool cyclicTransactionCheck(Cycle *visited, int weight);
+    bool traceflowCheck(Cycle *visited, Node *toNode, int len);
 };
 
 class Graph {
@@ -87,6 +88,7 @@ public:
     void printReceiving(char *nodeName) const;
     void circlefind(char *nodeName) const;
     void findcircles(char *nodeName, int k) const;
+    void traceflow(char *fromNodeName, char *toNodeName, int len) const;
 };
 
 #endif
