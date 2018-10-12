@@ -5,7 +5,7 @@
 #include <fstream>
 #include <cstdlib>
 #include "util.h"
-#include "lists.h"
+#include "datastructures.h"
 
 using namespace std;
 
@@ -88,12 +88,16 @@ int main(int argc, char *argv[]) {
                 weightStr = strtok(NULL, " \t");
                 if (Ni == NULL || Nj == NULL || weightStr == NULL) {
                     cout << "Invalid inputfile format." << endl;
+                    fclose(inputfp);
                     cleanup(&inputfilename, &outputfilename, &bufferptr, &graph);
                     return EC_FILE;
                 }
                 weight = (int) strtol(weightStr, &strtolEndptr, 10);
                 if (*strtolEndptr != '\0') {
                     cout << "Invalid inputfile format." << endl;
+                    fclose(inputfp);
+                    cleanup(&inputfilename, &outputfilename, &bufferptr, &graph);
+                    return EC_FILE;
                 } else {
                     graph->insertEdge(Ni, Nj, weight);
                 }
@@ -101,13 +105,15 @@ int main(int argc, char *argv[]) {
             }
         } catch (bad_alloc &e) {
             cerr << "Encountered an error while reading inputfile." << endl;
+            fclose(inputfp);
             cleanup(&inputfilename, &outputfilename, &bufferptr, &graph);
             return EC_MEM;
         }
         if (feof(inputfp)) {
-            cout << "Loaded graph from inputfile successfully!" << endl;
+            cout << "Loaded graph from inputfile successfully!" << endl << endl;
         } else {
             cerr << "Encountered an error while reading inputfile." << endl;
+            fclose(inputfp);
             cleanup(&inputfilename, &outputfilename, NULL, &graph);
             return EC_MEM;
         }

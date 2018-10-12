@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cstring>
 #include <iomanip>
-#include "lists.h"
+#include "datastructures.h"
 #include "util.h"
 
 using namespace std;
@@ -10,7 +10,7 @@ using namespace std;
 Edge::Edge(Node *receivingNode, int weight, Edge *nextEdge) :
         receivingNode(receivingNode), weight(weight), nextEdge(nextEdge), visited(false) {}
 
-Edge::~Edge() {};
+Edge::~Edge() {}
 
 Node *Edge::getReceivingNode() const {
     return receivingNode;
@@ -346,7 +346,7 @@ bool Node::traceflowCheck(Cycle *visited, Node *toNode, int len) {
                 if (visited->getLastEdge()->getReceivingNode() == toNode) {
                     cout << " Tra-found ";
                     visited->printCycle();
-                    foundCycle = true;
+                    return true;
                 }
             } else {
                 currentEdge->setVisited(true);

@@ -3,7 +3,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include "util.h"
-#include "lists.h"
+#include "datastructures.h"
 
 using namespace std;
 
@@ -14,7 +14,7 @@ void interface(Graph *graph) {
     int weight;
     const char cmdGenericErrorMsg[] = " Invalid command format - Type \"h\" for the correct format\n";
     const char cmdWeightErrorMsg[] = " Invalid command format: Weight must be an integer - Type \"h\" for the correct format\n";
-    cout << endl << "Type a command: ";
+    cout << "Type a command: ";
     try {
         while (getline(&buffer, &bufsize, stdin) != -1) {           // effectively an infinite loop
             // Until "e(xit)" is given, read current line and attempt to execute it as a command
