@@ -11,12 +11,13 @@ using namespace std;
 
 void interface(Graph *graph);
 
-void cleanup(char **inputfilename, char **outputfilename, char **bufferptr, Graph **graph) {
-    delete[] *inputfilename;
-    delete[] *outputfilename;
-    delete[] *bufferptr;
+void cleanup(FILE* inputfp, char **inputfilename, char **outputfilename, char **bufferptr, Graph **graph) {
+    if (inputfp != NULL) fclose(inputfp);
+    if (*inputfilename != NULL) delete[] *inputfilename;
+    if (*outputfilename != NULL) delete[] *outputfilename;
+    if (*bufferptr != NULL) free(*bufferptr);
     *inputfilename = *outputfilename = *bufferptr = NULL;
-    delete *graph;
+    if (*graph != NULL) delete *graph;
     *graph = NULL;
 }
 
@@ -60,7 +61,7 @@ int main(int argc, char *argv[]) {
     try {
         graph = new Graph();
     } catch (bad_alloc&) {
-        cleanup(&inputfilename, &outputfilename, NULL, &graph);
+        cleanup(NULL, &inputfilename, &outputfilename, NULL, &graph);
         return EC_MEM;
     }
 
@@ -75,7 +76,7 @@ int main(int argc, char *argv[]) {
         inputfp = fopen(inputfilename, "r");
         if (inputfp == NULL) {
             cout << "Failed to open inputfile." << endl;
-            cleanup(&inputfilename, &outputfilename, NULL, &graph);
+            cleanup(NULL, &inputfilename, &outputfilename, NULL, &graph);
             return EC_FILE;
         }
         try {
@@ -88,15 +89,13 @@ int main(int argc, char *argv[]) {
                 weightStr = strtok(NULL, " \t");
                 if (Ni == NULL || Nj == NULL || weightStr == NULL) {
                     cout << "Invalid inputfile format." << endl;
-                    fclose(inputfp);
-                    cleanup(&inputfilename, &outputfilename, &bufferptr, &graph);
+                    cleanup(inputfp, &inputfilename, &outputfilename, &bufferptr, &graph);
                     return EC_FILE;
                 }
                 weight = (int) strtol(weightStr, &strtolEndptr, 10);
-                if (*strtolEndptr != '\0') {
-                    cout << "Invalid inputfile format." << endl;
-                    fclose(inputfp);
-                    cleanup(&inputfilename, &outputfilename, &bufferptr, &graph);
+                if (*strtolEndptr != '\0' || (!ALLOW_NEGATIVE_WEIGHTS && weight < 0)) {
+                    cout << "Invalid inputfile format - Weight must be a non-negative integer." << endl;
+                    cleanup(inputfp, &inputfilename, &outputfilename, &bufferptr, &graph);
                     return EC_FILE;
                 } else {
                     graph->insertEdge(Ni, Nj, weight);
@@ -105,16 +104,14 @@ int main(int argc, char *argv[]) {
             }
         } catch (bad_alloc &e) {
             cerr << "Encountered an error while reading inputfile." << endl;
-            fclose(inputfp);
-            cleanup(&inputfilename, &outputfilename, &bufferptr, &graph);
+            cleanup(inputfp, &inputfilename, &outputfilename, &bufferptr, &graph);
             return EC_MEM;
         }
         if (feof(inputfp)) {
             cout << "Loaded graph from inputfile successfully!" << endl << endl;
         } else {
             cerr << "Encountered an error while reading inputfile." << endl;
-            fclose(inputfp);
-            cleanup(&inputfilename, &outputfilename, NULL, &graph);
+            cleanup(inputfp, &inputfilename, &outputfilename, NULL, &graph);
             return EC_MEM;
         }
         fclose(inputfp);
@@ -123,7 +120,7 @@ int main(int argc, char *argv[]) {
     try {
         interface(graph);     // <-- This is the main program, right here!
     } catch (bad_alloc&) {
-        cleanup(&inputfilename, &outputfilename, &bufferptr, &graph);
+        cleanup(NULL, &inputfilename, &outputfilename, &bufferptr, &graph);
         return EC_MEM;
     }
 
@@ -135,14 +132,14 @@ int main(int argc, char *argv[]) {
             graph->print(outputfile);
         } else {
             cout << "Failed to open outputfile." << endl;
-            cleanup(&inputfilename, &outputfilename, &bufferptr, &graph);
+            cleanup(NULL, &inputfilename, &outputfilename, &bufferptr, &graph);
             return EC_FILE;
         }
         outputfile.close();
         cout << "Saved graph to outputfile successfully!" << endl << endl;
     }
 
-    cleanup(&inputfilename, &outputfilename, &bufferptr, &graph);
+    cleanup(NULL, &inputfilename, &outputfilename, &bufferptr, &graph);
     cout << "Program completed successfully!" << endl;
     return EC_OK;
 }

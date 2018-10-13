@@ -1,6 +1,8 @@
 #ifndef OS_1_UTIL_H
 #define OS_1_UTIL_H
 
+#define ALLOW_NEGATIVE_WEIGHTS false
+
 enum ErrorCodes {
     EC_OK,       // Success
     EC_ARG,      // Invalid command line arguments

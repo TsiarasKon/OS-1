@@ -57,10 +57,6 @@ Edge *EdgeList::getFirstEdge() const {
     return firstEdge;
 }
 
-void EdgeList::setFirstEdge(Edge *firstEdge) {
-    EdgeList::firstEdge = firstEdge;
-}
-
 void EdgeList::print(std::ostream& outstream) const {
     Edge *current = firstEdge;
     outstream << endl;
@@ -153,14 +149,6 @@ int EdgeList::modifyEdge(char *toNodeName, int weight, int nweight) {
         current = current->getNextEdge();
     }
     return result;
-}
-
-void EdgeList::resetAllVisited() {
-    Edge *current = firstEdge;
-    while (current != NULL) {
-        current->setVisited(false);
-        current = current->getNextEdge();
-    }
 }
 
 void EdgeList::printTransactionsTo(char *fromNodeName, char *toNodeName, bool *printed) const {
@@ -374,14 +362,6 @@ Graph::~Graph() {
         delete current;
         current = next;
     }
-}
-
-Node *Graph::getFirstNode() const {
-    return firstNode;
-}
-
-void Graph::setFirstNode(Node *firstNode) {
-    Graph::firstNode = firstNode;
 }
 
 void Graph::print(std::ostream& outstream) const {

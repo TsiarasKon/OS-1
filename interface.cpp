@@ -13,13 +13,17 @@ void interface(Graph *graph) {
     char *Ni, *Nj, *weightStr, *command, *strtolEndptr;
     int weight;
     const char cmdGenericErrorMsg[] = " Invalid command format - Type \"h\" for the correct format\n";
-    const char cmdWeightErrorMsg[] = " Invalid command format: Weight must be an integer - Type \"h\" for the correct format\n";
+    const char *cmdWeightErrorMsg;
+    if (ALLOW_NEGATIVE_WEIGHTS) {
+        cmdWeightErrorMsg = " Invalid command format: Weight must be an integer\n";
+    } else {
+        cmdWeightErrorMsg = " Invalid command format: Weight must be a non-negative integer\n";
+    }
     cout << "Type a command: ";
     try {
         while (getline(&buffer, &bufsize, stdin) != -1) {           // effectively an infinite loop
             // Until "e(xit)" is given, read current line and attempt to execute it as a command
             bufferptr = buffer;
-            // TODO: no \r - we're on linux!
             strtok(buffer, "\r\n");     // remove trailing newline character
             command = strtok(buffer, " ");
             if (!strcmp(command, "i")) {
@@ -41,7 +45,7 @@ void interface(Graph *graph) {
                     cout << cmdGenericErrorMsg;
                 } else {
                     weight = (int) strtol(weightStr, &strtolEndptr, 10);
-                    if (*strtolEndptr != '\0') {
+                    if (*strtolEndptr != '\0' || (!ALLOW_NEGATIVE_WEIGHTS && weight < 0)) {
                         cout << cmdWeightErrorMsg;
                     } else {
                         graph->insertEdge(Ni, Nj, weight);
@@ -76,7 +80,7 @@ void interface(Graph *graph) {
                         }
                     } else {
                         weight = (int) strtol(weightStr, &strtolEndptr, 10);
-                        if (*strtolEndptr != '\0') {
+                        if (*strtolEndptr != '\0' || (!ALLOW_NEGATIVE_WEIGHTS && weight < 0)) {
                             cout << cmdWeightErrorMsg;
                         } else {
                             res = graph->deleteEdgesWithWeight(Ni, Nj, weight);
@@ -110,7 +114,7 @@ void interface(Graph *graph) {
                 } else {
                     weight = (int) strtol(weightStr, &strtolEndptr, 10);
                     nweight = (int) strtol(nweightStr, &strtolEndptr2, 10);
-                    if (*strtolEndptr != '\0' || *strtolEndptr2 != '\0') {
+                    if (*strtolEndptr != '\0' || *strtolEndptr2 != '\0' || (!ALLOW_NEGATIVE_WEIGHTS && (weight < 0 || nweight < 0))) {
                         cout << cmdWeightErrorMsg;
                     } else {
                         int res = graph->modifyEdge(Ni, Nj, weight, nweight);
@@ -150,7 +154,7 @@ void interface(Graph *graph) {
                     cout << cmdGenericErrorMsg;
                 } else {
                     weight = (int) strtol(weightStr, &strtolEndptr, 10);
-                    if (*strtolEndptr != '\0') {
+                    if (*strtolEndptr != '\0' || (!ALLOW_NEGATIVE_WEIGHTS && weight < 0)) {
                         cout << cmdWeightErrorMsg;
                     } else {
                         graph->findcircles(Ni, weight);
@@ -161,11 +165,11 @@ void interface(Graph *graph) {
                 Nj = strtok(NULL, " ");
                 char *lenStr = strtok(NULL, " ");
                 if (Ni == NULL || Nj == NULL || lenStr == NULL) {
-                    cout << " Invalid command format: Length must be an integer - Type \"h\" for the correct format\n";
+                    cout << cmdGenericErrorMsg;
                 } else {
                     int len = (int) strtol(lenStr, &strtolEndptr, 10);
-                    if (*strtolEndptr != '\0') {
-                        cout << cmdWeightErrorMsg;
+                    if (*strtolEndptr != '\0' || len <= 0) {
+                        cout << " Invalid command format: l must be a positive integer" << endl;
                     } else {
                         graph->traceflow(Ni, Nj, len);
                     }
@@ -188,9 +192,10 @@ void interface(Graph *graph) {
                      << endl;
                 cout << "  'p' - pretty print the current graph" << endl;
                 cout << "  'h' - print the list you're seeing right now" << endl;
-                cout << "  'e' - save the graph to a file and exit the program" << endl;
+                cout << "  'e' - exit" << endl;
             } else if (!strcmp(command, "e")) {
                 cout << endl;
+                free(bufferptr);
                 return;
             } else {
                 cout << " Unknown command - Type \"h\" for a list of available commands;" << endl;
@@ -198,7 +203,11 @@ void interface(Graph *graph) {
             buffer = bufferptr;     // used to avoid memory leaks due to strtok()
             cout << endl << "Type a command: ";
         }
-    } catch (bad_alloc&) { throw; }
+    } catch (bad_alloc&) {
+        delete[] bufferptr;
+        throw;
+    }
     // Should never get here
+    delete[] bufferptr;
     throw bad_alloc();
 }

@@ -31,13 +31,11 @@ public:
     EdgeList();
     ~EdgeList();
     Edge *getFirstEdge() const;
-    void setFirstEdge(Edge *firstEdge);
     void print(std::ostream& outstream) const;
     void insertEdge(Node *toNode, int weight);
     int deleteAllEdges(char *toNodeName);
     int deleteEdgesWithWeight(char *toNodeName, int weight);
     int modifyEdge(char *toNodeName, int weight, int nweight);
-    void resetAllVisited();
     void printTransactionsTo(char *fromNodeName, char *toNodeName, bool *printed) const;
 };
 
@@ -75,8 +73,6 @@ class Graph {
 public:
     Graph();
     ~Graph();
-    Node *getFirstNode() const;
-    void setFirstNode(Node *firstNode);
     void print(std::ostream& outstream) const;
     Node *getNodeByName(char *nodeName) const;
     Node *insertNode(char *nodeName);
