@@ -353,99 +353,91 @@ bool Node::traceflowCheck(Cycle *visited, Node *toNode, int len) {
 
 
 // Graph methods:
-Graph::Graph() : firstNode(NULL) {}
+Graph::Graph(int bucketsnum) : bucketsnum(bucketsnum), nodesnum(0) {
+    collisions = 0;     // TODO del
+    nodeTable = new Node*[bucketsnum];
+    for (int i = 0; i < bucketsnum; i++) {
+        nodeTable[i] = NULL;
+    }
+}
 
 Graph::~Graph() {
-    Node *current = firstNode, *next;
-    while (current != NULL) {
-        next = current->getNextNode();
-        delete current;
-        current = next;
+    for (int i = 0; i < bucketsnum; i++) {
+        Node *current = nodeTable[i], *next;
+        while (current != NULL) {
+            next = current->getNextNode();
+            delete current;
+            current = next;
+        }
     }
+    delete[] nodeTable;
 }
 
 void Graph::print(std::ostream& outstream) const {
-    Node *current = firstNode;
-    while (current != NULL) {
-        outstream << " |" << current->getNodeName() << "|";
-        current->getEdges()->print(outstream);
-        current = current->getNextNode();
+    for (int i = 0; i < bucketsnum; i++) {
+        cout << i << endl;
+        Node *current = nodeTable[i];
+        while (current != NULL) {
+            outstream << " |" << current->getNodeName() << "|";
+            current->getEdges()->print(outstream);
+            current = current->getNextNode();
+        }
     }
+    cout << endl << "Nodes: " << nodesnum << endl;       // TODO del
+    cout << endl << "Collisions: " << collisions << endl;       // TODO del
 }
 
 Node *Graph::getNodeByName(char *nodeName) const {
-    Node *current = firstNode;
-    while (current != NULL && strcmp(current->getNodeName(), nodeName) < 0) {
+    unsigned long currentBucket = hashFunc(nodeName) % bucketsnum;
+    Node *current = nodeTable[currentBucket];
+    while (current != NULL && strcmp(current->getNodeName(), nodeName) != 0) {
         current = current->getNextNode();
     }
-    // if reached end of list or surpassed node assumed position
-    if (current == NULL || strcmp(current->getNodeName(), nodeName) != 0) {
-        return NULL;
-    }
-    // node found
-    return current;
+    return current;         // if node doesn't exist, current will be null
 }
 
 Node *Graph::insertNode(char *nodeName) {        // returns the created node
     try {
-        Node *current = firstNode, *prev = firstNode;
-        while (current != NULL && strcmp(current->getNodeName(), nodeName) < 0) {
+        unsigned long currentBucket = hashFunc(nodeName) % bucketsnum;
+        Node *current = nodeTable[currentBucket], *prev = NULL;
+        while (current != NULL && strcmp(current->getNodeName(), nodeName) != 0) {
             prev = current;
             current = current->getNextNode();
         }
-        if (current == firstNode && (current == NULL || strcmp(current->getNodeName(), nodeName) != 0)) {     // insert at start
-            firstNode = new Node(nodeName, firstNode);
-            return firstNode;
-        }
-        if (current != NULL) {
-            if (strcmp(current->getNodeName(), nodeName) == 0) {        // node already exists
-                return NULL;
-            } else {        // just surpassed where the node would have been found, if it existed
-                prev->setNextNode(new Node(nodeName, current));
-                return prev->getNextNode();
-            }
-        } else {    // reached the end of the list
+        if (current != NULL) {      // node already exists
+            return NULL;
+        } else if (prev == NULL) {
+            nodeTable[currentBucket] = new Node(nodeName, NULL);
+            nodesnum++;
+            return nodeTable[currentBucket];
+        } else {
             prev->setNextNode(new Node(nodeName, NULL));
+            cout << " >> Inserted dup at bucket: " << currentBucket << endl;
+            nodesnum++;
+            collisions++;   // TODO del
             return prev->getNextNode();
         }
     } catch (bad_alloc&) { throw; }
 }
 
 void Graph::insertEdge(char *fromNodeName, char *toNodeName, int weight) {
-    /* Similar algorithm to insertNode() - if fromNode isn't found we create it and then insert the edge.
-     * In either case, toNode is first created if it doesn't exist. */
     try {
         Node *toNode = insertNode(toNodeName);
         if (toNode == NULL) {       // toNode already existed
             toNode = getNodeByName(toNodeName);
         }
-        Node *current = firstNode, *prev = firstNode;
-        while (current != NULL && strcmp(current->getNodeName(), fromNodeName) < 0) {
-            prev = current;
-            current = current->getNextNode();
+        Node *fromNode = insertNode(fromNodeName);
+        if (fromNode == NULL) {       // toNode already existed
+            fromNode = getNodeByName(fromNodeName);
         }
-        if (current == firstNode && (current == NULL || strcmp(current->getNodeName(), fromNodeName) != 0)) {     // insert at start
-            firstNode = new Node(fromNodeName, firstNode);
-            firstNode->getEdges()->insertEdge(toNode, weight);
-            return;
-        }
-        if (current != NULL) {
-            if (strcmp(current->getNodeName(), fromNodeName) == 0) {
-                current->getEdges()->insertEdge(toNode, weight);
-            } else {        // just surpassed where the node would have been found, if it existed
-                prev->setNextNode(new Node(fromNodeName, current));
-                prev->getNextNode()->getEdges()->insertEdge(toNode, weight);
-            }
-        } else {    // reached the end of the list
-            prev->setNextNode(new Node(fromNodeName, NULL));
-            prev->getNextNode()->getEdges()->insertEdge(toNode, weight);
-        }
+        fromNode->getEdges()->insertEdge(toNode, weight);
     } catch (bad_alloc&) { throw; }
 }
 
 bool Graph::deleteNode(char *nodeName) {
-    if (firstNode == NULL) return false;        // if list is empty
-    Node *current = firstNode, *prev = firstNode;
+    unsigned long currentBucket = hashFunc(nodeName) % bucketsnum;
+    if (nodeTable[currentBucket] == NULL) return false;        // if list is empty
+    Node *current = nodeTable[currentBucket], *prev = nodeTable[currentBucket];
     while (current != NULL && strcmp(current->getNodeName(), nodeName) < 0) {
         prev = current;
         current = current->getNextNode();
@@ -455,13 +447,13 @@ bool Graph::deleteNode(char *nodeName) {
         return false;
     }
     // node found
-    Node *i = firstNode;
+    Node *i = nodeTable[currentBucket];
     while (i != NULL) {
         i->getEdges()->deleteAllEdges(nodeName);
         i = i->getNextNode();
     }
-    if (current == firstNode) {
-        firstNode = current->getNextNode();
+    if (current == nodeTable[currentBucket]) {
+        nodeTable[currentBucket] = current->getNextNode();
     } else {
         prev->setNextNode(current->getNextNode());
     }
@@ -508,11 +500,14 @@ void Graph::printReceiving(char *nodeName) const {
         cout << " |" << nodeName << "| does not exist - abort-r;" << endl;
         return;
     }
-    Node *current = firstNode;
     bool printed = false;
-    while (current != NULL) {
-        current->getEdges()->printTransactionsTo(current->getNodeName(), nodeName, &printed);      // prints and updates flag
-        current = current->getNextNode();
+    for (int i = 0; i < bucketsnum; i++) {
+        Node *current = nodeTable[i];
+        while (current != NULL) {
+            current->getEdges()->printTransactionsTo(current->getNodeName(), nodeName,
+                                                     &printed);      // prints and updates flag
+            current = current->getNextNode();
+        }
     }
     if (!printed) {
         cout << " No-rec-edges |" << nodeName << "|" << endl;

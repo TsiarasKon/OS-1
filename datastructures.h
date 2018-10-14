@@ -69,9 +69,12 @@ public:
 };
 
 class Graph {
-    Node *firstNode;
+    int nodesnum;
+    int collisions;      // TODO del
+    int bucketsnum;
+    Node **nodeTable;
 public:
-    Graph();
+    explicit Graph(int bucketsnum);
     ~Graph();
     void print(std::ostream& outstream) const;
     Node *getNodeByName(char *nodeName) const;

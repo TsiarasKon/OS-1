@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
 
     Graph *graph;
     try {
-        graph = new Graph();
+        graph = new Graph(INITIAL_BUCKETS_NUM);
     } catch (bad_alloc&) {
         cleanup(NULL, &inputfilename, &outputfilename, NULL, &graph);
         return EC_MEM;
