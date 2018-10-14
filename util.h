@@ -3,9 +3,6 @@
 
 #define ALLOW_NEGATIVE_WEIGHTS false
 
-#define INITIAL_BUCKETS_NUM 128
-#define HASHING_LOAD_FACTOR 0.7
-
 enum ErrorCodes {
     EC_OK,       // Success
     EC_ARG,      // Invalid command line arguments

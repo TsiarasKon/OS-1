@@ -355,9 +355,11 @@ bool Node::traceflowCheck(Cycle *visited, Node *toNode, int len) {
 // Graph methods:
 Graph::Graph(int bucketsnum) : bucketsnum(bucketsnum), nodesnum(0) {
     collisions = 0;     // TODO del
-    nodeTable = new Node*[bucketsnum];
-    for (int i = 0; i < bucketsnum; i++) {
-        nodeTable[i] = NULL;
+    try {
+        nodeTable = new Node*[bucketsnum]();       // initialize to null
+    } catch (bad_alloc& e) {
+        cerr << __func__ << ": " << e.what() << endl;
+        throw;
     }
 }
 
@@ -397,20 +399,22 @@ Node *Graph::getNodeByName(char *nodeName) const {
 }
 
 Node *Graph::insertNode(char *nodeName) {        // returns the created node
+    if (getNodeByName(nodeName) != NULL) return NULL;     // node exists; return immediately
     try {
+        if (nodesnum + 1 > bucketsnum * HASHING_LOAD_FACTOR) {     // rehashing needed
+            rehashNodeTable();
+        }
         unsigned long currentBucket = hashFunc(nodeName) % bucketsnum;
         Node *current = nodeTable[currentBucket], *prev = NULL;
-        while (current != NULL && strcmp(current->getNodeName(), nodeName) != 0) {
+        while (current != NULL) {
             prev = current;
             current = current->getNextNode();
         }
-        if (current != NULL) {      // node already exists
-            return NULL;
-        } else if (prev == NULL) {
+        if (prev == NULL) {         // currentBucket is empty
             nodeTable[currentBucket] = new Node(nodeName, NULL);
             nodesnum++;
             return nodeTable[currentBucket];
-        } else {
+        } else {        // append in currentBucket after last Node
             prev->setNextNode(new Node(nodeName, NULL));
             cout << " >> Inserted dup at bucket: " << currentBucket << endl;
             nodesnum++;
@@ -418,6 +422,50 @@ Node *Graph::insertNode(char *nodeName) {        // returns the created node
             return prev->getNextNode();
         }
     } catch (bad_alloc&) { throw; }
+}
+
+void Graph::rehashNodeTable() {
+    cout << "!! REHASHING !!" << endl;
+    cout << " currentNodes: " << nodesnum << endl;
+    cout << " currentBucketsnum: " << bucketsnum << endl;
+    collisions = 0;   // TODO del
+    Node **oldNodeTable = nodeTable;
+    int oldBucketsnum = bucketsnum;
+    bucketsnum *= 2;
+    try {
+        nodeTable = new Node *[bucketsnum];
+    } catch (bad_alloc& e) {
+        cerr << __func__ << ": " << e.what() << endl;
+        throw;
+    }
+    for (int i = 0; i < oldBucketsnum; i++) {
+        Node *current = oldNodeTable[i], *next;
+        while (current != NULL) {
+            next = current->getNextNode();
+            insertNodeReference(current);
+            current = next;
+        }
+    }
+    delete[] oldNodeTable;
+}
+
+void Graph::insertNodeReference(Node *node) {
+    node->setNextNode(NULL);
+    unsigned long currentBucket = hashFunc(node->getNodeName()) % bucketsnum;
+    Node *current = nodeTable[currentBucket], *prev = NULL;
+    while (current != NULL) {
+        prev = current;
+        current = current->getNextNode();
+    }
+    if (prev == NULL) {         // currentBucket is empty
+        nodeTable[currentBucket] = node;
+        return;
+    } else {        // append in currentBucket after last Node
+        prev->setNextNode(node);
+        cout << " !>> Rehashing dup at bucket: " << currentBucket << endl;
+        collisions++;   // TODO del
+        return;
+    }
 }
 
 void Graph::insertEdge(char *fromNodeName, char *toNodeName, int weight) {

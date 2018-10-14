@@ -3,6 +3,9 @@
 
 #include <fstream>
 
+#define INITIAL_BUCKETS_NUM 16
+#define HASHING_LOAD_FACTOR 0.7
+
 // forward declarations
 class Graph;
 class Node;
@@ -73,6 +76,8 @@ class Graph {
     int collisions;      // TODO del
     int bucketsnum;
     Node **nodeTable;
+    void insertNodeReference(Node *node);
+    void rehashNodeTable();
 public:
     explicit Graph(int bucketsnum);
     ~Graph();
