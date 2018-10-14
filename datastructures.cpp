@@ -353,10 +353,10 @@ bool Node::traceflowCheck(Cycle *visited, Node *toNode, int len) {
 
 
 // Graph methods:
-Graph::Graph(int bucketsnum) : bucketsnum(bucketsnum), nodesnum(0) {
+Graph::Graph(int bucketsnum) :  nodesnum(0), bucketsnum(bucketsnum) {
     collisions = 0;     // TODO del
     try {
-        nodeTable = new Node*[bucketsnum]();       // initialize to null
+        nodeTable = new Node*[bucketsnum]();       // initialize buckets to null
     } catch (bad_alloc& e) {
         cerr << __func__ << ": " << e.what() << endl;
         throw;
@@ -433,7 +433,7 @@ void Graph::rehashNodeTable() {
     int oldBucketsnum = bucketsnum;
     bucketsnum *= 2;
     try {
-        nodeTable = new Node *[bucketsnum];
+        nodeTable = new Node *[bucketsnum]();       // initialize buckets to null
     } catch (bad_alloc& e) {
         cerr << __func__ << ": " << e.what() << endl;
         throw;
@@ -485,22 +485,21 @@ void Graph::insertEdge(char *fromNodeName, char *toNodeName, int weight) {
 bool Graph::deleteNode(char *nodeName) {
     unsigned long currentBucket = hashFunc(nodeName) % bucketsnum;
     if (nodeTable[currentBucket] == NULL) return false;        // if list is empty
-    Node *current = nodeTable[currentBucket], *prev = nodeTable[currentBucket];
-    while (current != NULL && strcmp(current->getNodeName(), nodeName) < 0) {
+    Node *current = nodeTable[currentBucket], *prev = NULL;
+    while (current != NULL && strcmp(current->getNodeName(), nodeName) != 0) {
         prev = current;
         current = current->getNextNode();
     }
-    // if reached end of list or surpassed node assumed position
-    if (current == NULL || strcmp(current->getNodeName(), nodeName) != 0) {
-        return false;
-    }
+    if (current == NULL) return false;      // node doesn't exist
     // node found
-    Node *i = nodeTable[currentBucket];
-    while (i != NULL) {
-        i->getEdges()->deleteAllEdges(nodeName);
-        i = i->getNextNode();
+    for (int i = 0; i < bucketsnum; i++) {      // delete incoming edges to current Node
+        Node *n = nodeTable[i];
+        while (n != NULL) {
+            n->getEdges()->deleteAllEdges(nodeName);
+            n = n->getNextNode();
+        }
     }
-    if (current == nodeTable[currentBucket]) {
+    if (prev == NULL) {
         nodeTable[currentBucket] = current->getNextNode();
     } else {
         prev->setNextNode(current->getNextNode());

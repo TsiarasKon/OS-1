@@ -1,5 +1,5 @@
-OBJS 	= main.o interface.o datastructures.o
-SOURCE	= main.cpp interface.cpp datastructures.cpp
+OBJS 	= main.o interface.o datastructures.o util.o
+SOURCE	= main.cpp interface.cpp datastructures.cpp util.cpp
 HEADER  = datastructures.h util.h
 OUT  	= mygraph
 CXX		= g++
@@ -16,6 +16,9 @@ interface.o: $(HEADER) interface.cpp
 
 datastructures.o: $(HEADER) datastructures.cpp
 	$(CXX) $(FLAGS) datastructures.cpp
+
+util.o: $(HEADER) util.cpp
+	$(CXX) $(FLAGS) util.cpp
 
 
 clean:

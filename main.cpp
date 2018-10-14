@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    Graph *graph;
+    Graph *graph = NULL;
     try {
         graph = new Graph(INITIAL_BUCKETS_NUM);
     } catch (bad_alloc&) {
