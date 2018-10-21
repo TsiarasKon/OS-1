@@ -13,8 +13,8 @@ class Node;
 class Edge {
     Node *receivingNode;
     int weight;
-    Edge *nextEdge;
     bool visited;
+    Edge *nextEdge;
 public:
     Edge(Node *receivingNode, int weight, Edge *nextEdge);
     ~Edge();
@@ -51,13 +51,13 @@ public:
     Edge *getLastEdge() const;
     void insertUnordered(Node *toNode, int weight);
     void deleteLast();
-    int nodeExists(Node *node) const;
     void printCycle() const;
 };
 
 class Node {
     char *nodeName;
     EdgeList *edges;
+    bool visited;
     Node *nextNode;
 public:
     Node(char *nodeName, Node *nextNode);
@@ -66,6 +66,8 @@ public:
     EdgeList *getEdges() const;
     Node *getNextNode() const;
     void setNextNode(Node *nextNode);
+    bool getVisited() const;
+    void setVisited(bool visited);
     bool simpleCycleCheck(Cycle *visited);
     bool cyclicTransactionCheck(Cycle *visited, int weight);
     bool traceflowCheck(Cycle *visited, Node *toNode, int len);

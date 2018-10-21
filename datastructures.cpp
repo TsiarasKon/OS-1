@@ -210,17 +210,6 @@ void Cycle::deleteLast() {
     }
 }
 
-/* 0: not exists; 1: is startingNode; 2: is another node */
-int Cycle::nodeExists(Node *node) const {
-    if (startingNode == node) return 1;
-    Edge *current = firstEdge;
-    while (current != NULL) {
-        if (current->getReceivingNode() == node) return 2;
-        current = current->getNextEdge();
-    }
-    return 0;
-}
-
 void Cycle::printCycle() const {
     cout << "|" << startingNode->getNodeName() << "|";
     Edge *current = firstEdge;
@@ -234,7 +223,7 @@ void Cycle::printCycle() const {
 
 // Node methods:
 Node::Node(char *nodeName, Node *nextNode) :
-        nextNode(nextNode) {
+        nextNode(nextNode), visited(false) {
     try {
         this->nodeName = new char[strlen(nodeName) + 1];
         strcpy(this->nodeName, nodeName);
@@ -267,24 +256,34 @@ void Node::setNextNode(Node *nextNode) {
     Node::nextNode = nextNode;
 }
 
+bool Node::getVisited() const {
+    return visited;
+}
+
+void Node::setVisited(bool visited) {
+    Node::visited = visited;
+}
+
+
 bool Node::simpleCycleCheck(Cycle *visited) {
     bool foundCycle = false;
     Edge *currentEdge = edges->getFirstEdge();
     while (currentEdge != NULL) {
-        int existsRes = visited->nodeExists(currentEdge->getReceivingNode());
         try {
-            if (existsRes == 1) {         // cycle found with startingNode
+            if (! currentEdge->getReceivingNode()->getVisited()) {         // no cycle - check next
+                this->setVisited(true);
+                visited->insertUnordered(currentEdge->getReceivingNode(),
+                                         currentEdge->getWeight());
+                foundCycle = currentEdge->getReceivingNode()->simpleCycleCheck(
+                        visited) || foundCycle;
+                visited->deleteLast();
+                this->setVisited(false);
+            } else if (currentEdge->getReceivingNode() == visited->getStartingNode()) {        // cycle found with startingNode
                 foundCycle = true;
                 visited->insertUnordered(currentEdge->getReceivingNode(),
                                          currentEdge->getWeight());
                 cout << " Cir-found ";
                 visited->printCycle();
-                visited->deleteLast();
-            } else if (existsRes == 0) {        // no cycle - check next
-                visited->insertUnordered(currentEdge->getReceivingNode(),
-                                         currentEdge->getWeight());
-                foundCycle = currentEdge->getReceivingNode()->simpleCycleCheck(
-                        visited) || foundCycle;
                 visited->deleteLast();
             }
         } catch (bad_alloc&) { throw; }
