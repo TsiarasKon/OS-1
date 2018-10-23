@@ -181,7 +181,7 @@ Edge *Cycle::getLastEdge() const {
     return lastEdge;
 }
 
-void Cycle::insertUnordered(Node *toNode, int weight) {
+void Cycle::push(Node *toNode, int weight) {
     try {
         if (firstEdge == NULL) {
             firstEdge = new Edge(toNode, weight, NULL);
@@ -210,17 +210,6 @@ void Cycle::deleteLast() {
     }
 }
 
-/* 0: not exists; 1: is startingNode; 2: is another node */
-int Cycle::nodeExists(Node *node) const {
-    if (startingNode == node) return 1;
-    Edge *current = firstEdge;
-    while (current != NULL) {
-        if (current->getReceivingNode() == node) return 2;
-        current = current->getNextEdge();
-    }
-    return 0;
-}
-
 void Cycle::printCycle() const {
     cout << "|" << startingNode->getNodeName() << "|";
     Edge *current = firstEdge;
@@ -234,7 +223,7 @@ void Cycle::printCycle() const {
 
 // Node methods:
 Node::Node(char *nodeName, Node *nextNode) :
-        nextNode(nextNode) {
+        nextNode(nextNode), visited(false) {
     try {
         this->nodeName = new char[strlen(nodeName) + 1];
         strcpy(this->nodeName, nodeName);
@@ -267,24 +256,36 @@ void Node::setNextNode(Node *nextNode) {
     Node::nextNode = nextNode;
 }
 
+bool Node::getVisited() const {
+    return visited;
+}
+
+void Node::setVisited(bool visited) {
+    Node::visited = visited;
+}
+
+
 bool Node::simpleCycleCheck(Cycle *visited) {
     bool foundCycle = false;
     Edge *currentEdge = edges->getFirstEdge();
     while (currentEdge != NULL) {
-        int existsRes = visited->nodeExists(currentEdge->getReceivingNode());
         try {
-            if (existsRes == 1) {         // cycle found with startingNode
-                foundCycle = true;
-                visited->insertUnordered(currentEdge->getReceivingNode(),
-                                         currentEdge->getWeight());
-                cout << " Cir-found ";
-                visited->printCycle();
-                visited->deleteLast();
-            } else if (existsRes == 0) {        // no cycle - check next
-                visited->insertUnordered(currentEdge->getReceivingNode(),
-                                         currentEdge->getWeight());
+            if (! currentEdge->getReceivingNode()->getVisited()) {         // no cycle - check next
+                this->setVisited(true);
+                visited->push(currentEdge->getReceivingNode(),
+                              currentEdge->getWeight());
                 foundCycle = currentEdge->getReceivingNode()->simpleCycleCheck(
                         visited) || foundCycle;
+                visited->deleteLast();
+                this->setVisited(false);
+            } else if (currentEdge->getReceivingNode() == visited->getStartingNode()) {        // cycle found with startingNode
+                visited->push(currentEdge->getReceivingNode(),
+                              currentEdge->getWeight());
+                if (! foundCycle) {     // TODO: rec carry foundCycle
+                    cout << " Cir-found ";
+                    foundCycle = true;
+                }
+                visited->printCycle();
                 visited->deleteLast();
             }
         } catch (bad_alloc&) { throw; }
@@ -297,25 +298,20 @@ bool Node::cyclicTransactionCheck(Cycle *visited, int k) {
     bool foundCycle = false;
     Edge *currentEdge = edges->getFirstEdge();
     while (currentEdge != NULL) {
-        if (currentEdge->getWeight() >= k) {         // if less than k, abandon path
+        // if weight is less than k or currentEdge has already been visited, abandon path
+        if (!currentEdge->getVisited() && currentEdge->getWeight() >= k) {
             try {
-                // if already visited edge or currentNode is the same as the starting one, circle found
-                if (currentEdge->getVisited() || (visited->getLastEdge() != NULL && visited->getLastEdge()->getReceivingNode() == visited->getStartingNode())) {
-                    if (visited->getLastEdge()->getReceivingNode() == visited->getStartingNode()) {
-                        cout << " Cir-found ";
-                        visited->printCycle();
-                        return true;
-                    }
-                } else {
-                    currentEdge->setVisited(true);
-                    visited->insertUnordered(currentEdge->getReceivingNode(),
-                                             currentEdge->getWeight());
-                    foundCycle =
-                            currentEdge->getReceivingNode()->cyclicTransactionCheck(
-                                    visited, k) || foundCycle;
-                    visited->deleteLast();
-                    currentEdge->setVisited(false);
+                visited->push(currentEdge->getReceivingNode(), currentEdge->getWeight());
+                currentEdge->setVisited(true);
+                // if currentNode is the same as the starting one, circle found
+                if (currentEdge->getReceivingNode() == visited->getStartingNode()) {
+                    cout << " Cir-found ";
+                    visited->printCycle();
+                    foundCycle = true;
                 }
+                foundCycle = currentEdge->getReceivingNode()->cyclicTransactionCheck(visited, k) || foundCycle;
+                visited->deleteLast();
+                currentEdge->setVisited(false);
             } catch (bad_alloc &) { throw; }
         }
         currentEdge = currentEdge->getNextEdge();
@@ -338,8 +334,8 @@ bool Node::traceflowCheck(Cycle *visited, Node *toNode, int len) {
                 }
             } else {
                 currentEdge->setVisited(true);
-                visited->insertUnordered(currentEdge->getReceivingNode(),
-                                         currentEdge->getWeight());
+                visited->push(currentEdge->getReceivingNode(),
+                              currentEdge->getWeight());
                 foundCycle =
                         currentEdge->getReceivingNode()->traceflowCheck(visited, toNode, len - 1) || foundCycle;
                 visited->deleteLast();
@@ -353,115 +349,154 @@ bool Node::traceflowCheck(Cycle *visited, Node *toNode, int len) {
 
 
 // Graph methods:
-Graph::Graph() : firstNode(NULL) {}
+Graph::Graph(int bucketsnum) :  nodesnum(0), bucketsnum(bucketsnum) {
+    collisions = 0;     // TODO del
+    try {
+        nodeTable = new Node*[bucketsnum]();       // initialize buckets to null
+    } catch (bad_alloc& e) {
+        cerr << __func__ << ": " << e.what() << endl;
+        throw;
+    }
+}
 
 Graph::~Graph() {
-    Node *current = firstNode, *next;
-    while (current != NULL) {
-        next = current->getNextNode();
-        delete current;
-        current = next;
+    for (int i = 0; i < bucketsnum; i++) {
+        Node *current = nodeTable[i], *next;
+        while (current != NULL) {
+            next = current->getNextNode();
+            delete current;
+            current = next;
+        }
     }
+    delete[] nodeTable;
 }
 
 void Graph::print(std::ostream& outstream) const {
-    Node *current = firstNode;
-    while (current != NULL) {
-        outstream << " |" << current->getNodeName() << "|";
-        current->getEdges()->print(outstream);
-        current = current->getNextNode();
+    for (int i = 0; i < bucketsnum; i++) {
+        cout << i << endl;
+        Node *current = nodeTable[i];
+        while (current != NULL) {
+            outstream << " |" << current->getNodeName() << "|";
+            current->getEdges()->print(outstream);
+            current = current->getNextNode();
+        }
     }
+    cout << endl << "Nodes: " << nodesnum << endl;       // TODO del
+    cout << endl << "Collisions: " << collisions << endl;       // TODO del
 }
 
 Node *Graph::getNodeByName(char *nodeName) const {
-    Node *current = firstNode;
-    while (current != NULL && strcmp(current->getNodeName(), nodeName) < 0) {
+    unsigned long currentBucket = hashFunc(nodeName) % bucketsnum;
+    Node *current = nodeTable[currentBucket];
+    while (current != NULL && strcmp(current->getNodeName(), nodeName) != 0) {
         current = current->getNextNode();
     }
-    // if reached end of list or surpassed node assumed position
-    if (current == NULL || strcmp(current->getNodeName(), nodeName) != 0) {
-        return NULL;
-    }
-    // node found
-    return current;
+    return current;         // if node doesn't exist, current will be null
 }
 
 Node *Graph::insertNode(char *nodeName) {        // returns the created node
+    if (getNodeByName(nodeName) != NULL) return NULL;     // node exists; return immediately
     try {
-        Node *current = firstNode, *prev = firstNode;
-        while (current != NULL && strcmp(current->getNodeName(), nodeName) < 0) {
+        if (nodesnum + 1 > bucketsnum * HASHING_LOAD_FACTOR) {     // rehashing needed
+            rehashNodeTable();
+        }
+        unsigned long currentBucket = hashFunc(nodeName) % bucketsnum;
+        Node *current = nodeTable[currentBucket], *prev = NULL;
+        while (current != NULL) {
             prev = current;
             current = current->getNextNode();
         }
-        if (current == firstNode && (current == NULL || strcmp(current->getNodeName(), nodeName) != 0)) {     // insert at start
-            firstNode = new Node(nodeName, firstNode);
-            return firstNode;
-        }
-        if (current != NULL) {
-            if (strcmp(current->getNodeName(), nodeName) == 0) {        // node already exists
-                return NULL;
-            } else {        // just surpassed where the node would have been found, if it existed
-                prev->setNextNode(new Node(nodeName, current));
-                return prev->getNextNode();
-            }
-        } else {    // reached the end of the list
+        if (prev == NULL) {         // currentBucket is empty
+            nodeTable[currentBucket] = new Node(nodeName, NULL);
+            nodesnum++;
+            return nodeTable[currentBucket];
+        } else {        // append in currentBucket after last Node
             prev->setNextNode(new Node(nodeName, NULL));
+            cout << " >> Inserted dup at bucket: " << currentBucket << endl;
+            nodesnum++;
+            collisions++;   // TODO del
             return prev->getNextNode();
         }
     } catch (bad_alloc&) { throw; }
 }
 
+void Graph::rehashNodeTable() {
+    cout << "!! REHASHING !!" << endl;
+    cout << " currentNodes: " << nodesnum << endl;
+    cout << " currentBucketsnum: " << bucketsnum << endl;
+    collisions = 0;   // TODO del
+    Node **oldNodeTable = nodeTable;
+    int oldBucketsnum = bucketsnum;
+    bucketsnum *= 2;
+    try {
+        nodeTable = new Node *[bucketsnum]();       // initialize buckets to null
+    } catch (bad_alloc& e) {
+        cerr << __func__ << ": " << e.what() << endl;
+        throw;
+    }
+    for (int i = 0; i < oldBucketsnum; i++) {
+        Node *current = oldNodeTable[i], *next;
+        while (current != NULL) {
+            next = current->getNextNode();
+            insertNodeReference(current);
+            current = next;
+        }
+    }
+    delete[] oldNodeTable;
+}
+
+void Graph::insertNodeReference(Node *node) {
+    node->setNextNode(NULL);
+    unsigned long currentBucket = hashFunc(node->getNodeName()) % bucketsnum;
+    Node *current = nodeTable[currentBucket], *prev = NULL;
+    while (current != NULL) {
+        prev = current;
+        current = current->getNextNode();
+    }
+    if (prev == NULL) {         // currentBucket is empty
+        nodeTable[currentBucket] = node;
+        return;
+    } else {        // append in currentBucket after last Node
+        prev->setNextNode(node);
+        cout << " !>> Rehashing dup at bucket: " << currentBucket << endl;
+        collisions++;   // TODO del
+        return;
+    }
+}
+
 void Graph::insertEdge(char *fromNodeName, char *toNodeName, int weight) {
-    /* Similar algorithm to insertNode() - if fromNode isn't found we create it and then insert the edge.
-     * In either case, toNode is first created if it doesn't exist. */
     try {
         Node *toNode = insertNode(toNodeName);
         if (toNode == NULL) {       // toNode already existed
             toNode = getNodeByName(toNodeName);
         }
-        Node *current = firstNode, *prev = firstNode;
-        while (current != NULL && strcmp(current->getNodeName(), fromNodeName) < 0) {
-            prev = current;
-            current = current->getNextNode();
+        Node *fromNode = insertNode(fromNodeName);
+        if (fromNode == NULL) {       // toNode already existed
+            fromNode = getNodeByName(fromNodeName);
         }
-        if (current == firstNode && (current == NULL || strcmp(current->getNodeName(), fromNodeName) != 0)) {     // insert at start
-            firstNode = new Node(fromNodeName, firstNode);
-            firstNode->getEdges()->insertEdge(toNode, weight);
-            return;
-        }
-        if (current != NULL) {
-            if (strcmp(current->getNodeName(), fromNodeName) == 0) {
-                current->getEdges()->insertEdge(toNode, weight);
-            } else {        // just surpassed where the node would have been found, if it existed
-                prev->setNextNode(new Node(fromNodeName, current));
-                prev->getNextNode()->getEdges()->insertEdge(toNode, weight);
-            }
-        } else {    // reached the end of the list
-            prev->setNextNode(new Node(fromNodeName, NULL));
-            prev->getNextNode()->getEdges()->insertEdge(toNode, weight);
-        }
+        fromNode->getEdges()->insertEdge(toNode, weight);
     } catch (bad_alloc&) { throw; }
 }
 
 bool Graph::deleteNode(char *nodeName) {
-    if (firstNode == NULL) return false;        // if list is empty
-    Node *current = firstNode, *prev = firstNode;
-    while (current != NULL && strcmp(current->getNodeName(), nodeName) < 0) {
+    unsigned long currentBucket = hashFunc(nodeName) % bucketsnum;
+    if (nodeTable[currentBucket] == NULL) return false;        // if list is empty
+    Node *current = nodeTable[currentBucket], *prev = NULL;
+    while (current != NULL && strcmp(current->getNodeName(), nodeName) != 0) {
         prev = current;
         current = current->getNextNode();
     }
-    // if reached end of list or surpassed node assumed position
-    if (current == NULL || strcmp(current->getNodeName(), nodeName) != 0) {
-        return false;
-    }
+    if (current == NULL) return false;      // node doesn't exist
     // node found
-    Node *i = firstNode;
-    while (i != NULL) {
-        i->getEdges()->deleteAllEdges(nodeName);
-        i = i->getNextNode();
+    for (int i = 0; i < bucketsnum; i++) {      // delete incoming edges to current Node
+        Node *n = nodeTable[i];
+        while (n != NULL) {
+            n->getEdges()->deleteAllEdges(nodeName);
+            n = n->getNextNode();
+        }
     }
-    if (current == firstNode) {
-        firstNode = current->getNextNode();
+    if (prev == NULL) {
+        nodeTable[currentBucket] = current->getNextNode();
     } else {
         prev->setNextNode(current->getNextNode());
     }
@@ -508,11 +543,14 @@ void Graph::printReceiving(char *nodeName) const {
         cout << " |" << nodeName << "| does not exist - abort-r;" << endl;
         return;
     }
-    Node *current = firstNode;
     bool printed = false;
-    while (current != NULL) {
-        current->getEdges()->printTransactionsTo(current->getNodeName(), nodeName, &printed);      // prints and updates flag
-        current = current->getNextNode();
+    for (int i = 0; i < bucketsnum; i++) {
+        Node *current = nodeTable[i];
+        while (current != NULL) {
+            current->getEdges()->printTransactionsTo(current->getNodeName(), nodeName,
+                                                     &printed);      // prints and updates flag
+            current = current->getNextNode();
+        }
     }
     if (!printed) {
         cout << " No-rec-edges |" << nodeName << "|" << endl;

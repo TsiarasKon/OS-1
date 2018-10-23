@@ -11,4 +11,6 @@ enum ErrorCodes {
     EC_UNKNOWN   // An unexpected error
 };
 
+unsigned long hashFunc(char *str);
+
 #endif
