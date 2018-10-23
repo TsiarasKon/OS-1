@@ -276,6 +276,17 @@ void Node::setVisited(bool visited) {
 
 bool Node::simpleCycleCheck(EdgeStack *visited) {
     bool foundCycle = false;
+    if (this->visited) {
+        if (this == visited->getStartingNode()) {        // cycle found with startingNode
+            if (! foundCycle) {     // TODO: rec carry foundCycle
+                cout << " Cir-found ";
+                foundCycle = true;
+            }
+            visited->printCycle();
+            return true;
+        }
+        return false;
+    }
     Edge *currentEdge = edges->getFirstEdge();
     while (currentEdge != NULL) {
         try {
