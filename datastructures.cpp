@@ -181,7 +181,7 @@ Edge *Cycle::getLastEdge() const {
     return lastEdge;
 }
 
-void Cycle::insertUnordered(Node *toNode, int weight) {
+void Cycle::push(Node *toNode, int weight) {
     try {
         if (firstEdge == NULL) {
             firstEdge = new Edge(toNode, weight, NULL);
@@ -272,17 +272,19 @@ bool Node::simpleCycleCheck(Cycle *visited) {
         try {
             if (! currentEdge->getReceivingNode()->getVisited()) {         // no cycle - check next
                 this->setVisited(true);
-                visited->insertUnordered(currentEdge->getReceivingNode(),
-                                         currentEdge->getWeight());
+                visited->push(currentEdge->getReceivingNode(),
+                              currentEdge->getWeight());
                 foundCycle = currentEdge->getReceivingNode()->simpleCycleCheck(
                         visited) || foundCycle;
                 visited->deleteLast();
                 this->setVisited(false);
             } else if (currentEdge->getReceivingNode() == visited->getStartingNode()) {        // cycle found with startingNode
-                foundCycle = true;
-                visited->insertUnordered(currentEdge->getReceivingNode(),
-                                         currentEdge->getWeight());
-                cout << " Cir-found ";
+                visited->push(currentEdge->getReceivingNode(),
+                              currentEdge->getWeight());
+                if (! foundCycle) {     // TODO: rec carry foundCycle
+                    cout << " Cir-found ";
+                    foundCycle = true;
+                }
                 visited->printCycle();
                 visited->deleteLast();
             }
@@ -296,25 +298,20 @@ bool Node::cyclicTransactionCheck(Cycle *visited, int k) {
     bool foundCycle = false;
     Edge *currentEdge = edges->getFirstEdge();
     while (currentEdge != NULL) {
-        if (currentEdge->getWeight() >= k) {         // if less than k, abandon path
+        // if weight is less than k or currentEdge has already been visited, abandon path
+        if (!currentEdge->getVisited() && currentEdge->getWeight() >= k) {
             try {
-                // if already visited edge or currentNode is the same as the starting one, circle found
-                if (currentEdge->getVisited() || (visited->getLastEdge() != NULL && visited->getLastEdge()->getReceivingNode() == visited->getStartingNode())) {
-                    if (visited->getLastEdge()->getReceivingNode() == visited->getStartingNode()) {
-                        cout << " Cir-found ";
-                        visited->printCycle();
-                        return true;
-                    }
-                } else {
-                    currentEdge->setVisited(true);
-                    visited->insertUnordered(currentEdge->getReceivingNode(),
-                                             currentEdge->getWeight());
-                    foundCycle =
-                            currentEdge->getReceivingNode()->cyclicTransactionCheck(
-                                    visited, k) || foundCycle;
-                    visited->deleteLast();
-                    currentEdge->setVisited(false);
+                visited->push(currentEdge->getReceivingNode(), currentEdge->getWeight());
+                currentEdge->setVisited(true);
+                // if currentNode is the same as the starting one, circle found
+                if (currentEdge->getReceivingNode() == visited->getStartingNode()) {
+                    cout << " Cir-found ";
+                    visited->printCycle();
+                    foundCycle = true;
                 }
+                foundCycle = currentEdge->getReceivingNode()->cyclicTransactionCheck(visited, k) || foundCycle;
+                visited->deleteLast();
+                currentEdge->setVisited(false);
             } catch (bad_alloc &) { throw; }
         }
         currentEdge = currentEdge->getNextEdge();
@@ -337,8 +334,8 @@ bool Node::traceflowCheck(Cycle *visited, Node *toNode, int len) {
                 }
             } else {
                 currentEdge->setVisited(true);
-                visited->insertUnordered(currentEdge->getReceivingNode(),
-                                         currentEdge->getWeight());
+                visited->push(currentEdge->getReceivingNode(),
+                              currentEdge->getWeight());
                 foundCycle =
                         currentEdge->getReceivingNode()->traceflowCheck(visited, toNode, len - 1) || foundCycle;
                 visited->deleteLast();

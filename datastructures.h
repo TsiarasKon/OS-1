@@ -49,7 +49,7 @@ public:
     explicit Cycle(Node *startingNode);
     Node *getStartingNode() const;
     Edge *getLastEdge() const;
-    void insertUnordered(Node *toNode, int weight);
+    void push(Node *toNode, int weight);
     void deleteLast();
     void printCycle() const;
 };
