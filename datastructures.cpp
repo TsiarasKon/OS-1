@@ -170,53 +170,62 @@ void EdgeList::printTransactionsTo(char *fromNodeName, char *toNodeName, bool *p
 }
 
 
-// Cycle methods
-Cycle::Cycle(Node *startingNode) : EdgeList(), startingNode(startingNode), lastEdge(NULL) {}
+// EdgeStack methods
+EdgeStack::EdgeStack(Node *startingNode) : startingNode(startingNode), headEdge(NULL) {}
 
-Node *Cycle::getStartingNode() const {
+EdgeStack::~EdgeStack() {
+    Edge *current = headEdge, *next;
+    while (current != NULL) {
+        next = current->getNextEdge();
+        delete current;
+        current = next;
+    }
+}
+
+Node *EdgeStack::getStartingNode() const {
     return startingNode;
 }
 
-Edge *Cycle::getLastEdge() const {
-    return lastEdge;
+Edge *EdgeStack::getHeadEdge() const {
+    return headEdge;
 }
 
-void Cycle::push(Node *toNode, int weight) {
+void EdgeStack::push(Node *toNode, int weight) {
     try {
-        if (firstEdge == NULL) {
-            firstEdge = new Edge(toNode, weight, NULL);
-            lastEdge = firstEdge;
-        } else {
-            lastEdge->setNextEdge(new Edge(toNode, weight, NULL));
-            lastEdge = lastEdge->getNextEdge();
-        }
+        headEdge = new Edge(toNode, weight, headEdge);
     } catch (bad_alloc& e) { throw; }
 }
 
-void Cycle::deleteLast() {
-    Edge *current = firstEdge;
-    while (current != NULL && current != lastEdge && current->getNextEdge() != lastEdge) {     // current should be the penultimate edge (or firstedge)
-        current = current->getNextEdge();
-    }
-    if (current == NULL) {
-        cerr << "Attempted to deleteLast() from empty cycle?" << endl;
-    } else if (current == lastEdge) {
-        delete lastEdge;
-        firstEdge = lastEdge = NULL;
+void EdgeStack::deleteLast() {
+    if (headEdge == NULL) {
+        cerr << "Attempted to pop() from empty EdgeStack?" << endl;
     } else {
-        delete lastEdge;
-        current->setNextEdge(NULL);
-        lastEdge = current;
+        Edge *nextEdge = headEdge->getNextEdge();
+        delete headEdge;
+        headEdge = nextEdge;
     }
 }
 
-void Cycle::printCycle() const {
+void EdgeStack::printCycle() const {
+    Edge *current = this->headEdge;
+    // reverse the stack so that the edges are printed in order
+    EdgeStack *reverseStack = NULL;
+    try {
+        reverseStack = new EdgeStack(startingNode);
+        while (current != NULL) {
+            reverseStack->push(current->getReceivingNode(),
+                               current->getWeight());
+            current = current->getNextEdge();
+        }
+    } catch (bad_alloc& e) { throw; }
+    // then traverse the ordered stack and print it according to the requested format
     cout << "|" << startingNode->getNodeName() << "|";
-    Edge *current = firstEdge;
+    current = reverseStack->getHeadEdge();
     while (current != NULL) {
         cout << "->" << current->getWeight() << "->|" << current->getReceivingNode()->getNodeName() << "|";
         current = current->getNextEdge();
     }
+    delete reverseStack;
     cout << endl;
 }
 
@@ -265,7 +274,7 @@ void Node::setVisited(bool visited) {
 }
 
 
-bool Node::simpleCycleCheck(Cycle *visited) {
+bool Node::simpleCycleCheck(EdgeStack *visited) {
     bool foundCycle = false;
     Edge *currentEdge = edges->getFirstEdge();
     while (currentEdge != NULL) {
@@ -294,7 +303,7 @@ bool Node::simpleCycleCheck(Cycle *visited) {
     return foundCycle;
 }
 
-bool Node::cyclicTransactionCheck(Cycle *visited, int k) {
+bool Node::cyclicTransactionCheck(EdgeStack *visited, int k) {
     bool foundCycle = false;
     Edge *currentEdge = edges->getFirstEdge();
     while (currentEdge != NULL) {
@@ -319,15 +328,15 @@ bool Node::cyclicTransactionCheck(Cycle *visited, int k) {
     return foundCycle;
 }
 
-bool Node::traceflowCheck(Cycle *visited, Node *toNode, int len) {
+bool Node::traceflowCheck(EdgeStack *visited, Node *toNode, int len) {
     if (len < 0) return false;
     bool foundCycle = false;
     Edge *currentEdge = edges->getFirstEdge();
     while (currentEdge != NULL) {
         try {
             // if already visited edge or currentNode is toNode, circle found
-            if (currentEdge->getVisited() || (visited->getLastEdge() != NULL && visited->getLastEdge()->getReceivingNode() == toNode)) {
-                if (visited->getLastEdge()->getReceivingNode() == toNode) {
+            if (currentEdge->getVisited() || (visited->getHeadEdge() != NULL && visited->getHeadEdge()->getReceivingNode() == toNode)) {
+                if (visited->getHeadEdge()->getReceivingNode() == toNode) {
                     cout << " Tra-found ";
                     visited->printCycle();
                     return true;
@@ -563,9 +572,9 @@ void Graph::circlefind(char *nodeName) const {
         cout << " |" << nodeName << "| does not exist - abort-c;" << endl;
         return;
     }
-    Cycle *visited;
+    EdgeStack *visited;
     try {
-        visited = new Cycle(node);
+        visited = new EdgeStack(node);
         if (!node->simpleCycleCheck(visited)) {
             cout << " No-circle-found |" << nodeName << "|" << endl;
         }
@@ -579,9 +588,9 @@ void Graph::findcircles(char *nodeName, int k) const {
         cout << " |" << nodeName << "| does not exist - abort-f;" << endl;
         return;
     }
-    Cycle *visited;
+    EdgeStack *visited;
     try {
-        visited = new Cycle(node);
+        visited = new EdgeStack(node);
         if (!node->cyclicTransactionCheck(visited, k)) {
             cout << " No-circle-found invloving |" << nodeName << "| " << k << endl;
         }
@@ -600,9 +609,9 @@ void Graph::traceflow(char *fromNodeName, char *toNodeName, int len) const {
         cout << " |" << toNodeName << "| does not exist - abort-t;" << endl;
         return;
     }
-    Cycle *visited;
+    EdgeStack *visited;
     try {
-        visited = new Cycle(fromNode);
+        visited = new EdgeStack(fromNode);
         if (!fromNode->traceflowCheck(visited, toNode, len)) {
             cout << " No-trace from |" << fromNodeName << "| to |" << toNodeName << "|" << endl;
         }

@@ -28,7 +28,6 @@ public:
 };
 
 class EdgeList {
-protected:
     Edge *firstEdge;
 public:
     EdgeList();
@@ -42,13 +41,14 @@ public:
     void printTransactionsTo(char *fromNodeName, char *toNodeName, bool *printed) const;
 };
 
-class Cycle : public EdgeList {
+class EdgeStack {
     Node *startingNode;
-    Edge *lastEdge;
+    Edge *headEdge;
 public:
-    explicit Cycle(Node *startingNode);
+    explicit EdgeStack(Node *startingNode);
+    ~EdgeStack();
     Node *getStartingNode() const;
-    Edge *getLastEdge() const;
+    Edge *getHeadEdge() const;
     void push(Node *toNode, int weight);
     void deleteLast();
     void printCycle() const;
@@ -68,9 +68,9 @@ public:
     void setNextNode(Node *nextNode);
     bool getVisited() const;
     void setVisited(bool visited);
-    bool simpleCycleCheck(Cycle *visited);
-    bool cyclicTransactionCheck(Cycle *visited, int weight);
-    bool traceflowCheck(Cycle *visited, Node *toNode, int len);
+    bool simpleCycleCheck(EdgeStack *visited);
+    bool cyclicTransactionCheck(EdgeStack *visited, int weight);
+    bool traceflowCheck(EdgeStack *visited, Node *toNode, int len);
 };
 
 class Graph {
