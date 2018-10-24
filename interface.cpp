@@ -19,7 +19,7 @@ void interface(Graph *graph) {
     } else {
         cmdWeightErrorMsg = "(!) Invalid command format: Weight must be a non-negative integer\n";
     }
-    cout << "Type a command: ";
+    if (SHOW_EXTRA_UI) cout << "Type a command: ";
     try {
         while (getline(&buffer, &bufsize, stdin) != -1) {           // effectively an infinite loop
             // Until "e(xit)" is given, read current line and attempt to execute it as a command
@@ -201,7 +201,8 @@ void interface(Graph *graph) {
                 cout << "(!) Unknown command - Type \"h\" for a list of available commands;" << endl;
             }
             buffer = bufferptr;     // used to avoid memory leaks due to strtok()
-            cout << endl << "Type a command: ";
+            cout << endl;
+            if (SHOW_EXTRA_UI) cout << "Type a command: ";
         }
     } catch (bad_alloc&) {
         delete[] bufferptr;

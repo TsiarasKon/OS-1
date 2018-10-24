@@ -61,7 +61,7 @@ void EdgeList::print(std::ostream& outstream) const {
     Edge *current = firstEdge;
     outstream << endl;
     while (current != NULL) {
-        outstream << "\t\t-" << current->getWeight() << "->|" << current->getReceivingNode()->getNodeName() << "|" << endl;
+        outstream << " -" << current->getWeight() << "->|" << current->getReceivingNode()->getNodeName() << "|" << endl;
         current = current->getNextEdge();
     }
     outstream << endl;
@@ -137,6 +137,7 @@ int EdgeList::deleteEdgesWithWeight(char *toNodeName, int weight) {
 
 int EdgeList::modifyEdge(char *toNodeName, int weight, int nweight) {
     Edge *current = firstEdge;
+    // iterate until edge's assumed position
     while (current != NULL && strcmp(current->getReceivingNode()->getNodeName(), toNodeName) < 0) {
         current = current->getNextEdge();
     }
@@ -160,8 +161,7 @@ void EdgeList::printTransactionsTo(char *fromNodeName, char *toNodeName, bool *p
         if (! *printed) {
             cout << "Rec-edges ";
         }
-        cout << "|" << fromNodeName << "|->" << current->getWeight() << "->|" <<
-             toNodeName << "|" << endl;
+        cout << "|" << fromNodeName << "|->" << current->getWeight() << "->|" << toNodeName << "|" << endl;
         *printed = true;
         current = current->getNextEdge();
     }
@@ -204,21 +204,28 @@ void EdgeStack::deleteLast() {
     }
 }
 
-void EdgeStack::printCycle() const {
+EdgeStack* EdgeStack::getReverseStack() const {
     Edge *current = this->headEdge;
-    // reverse the stack so that the edges are printed in order
     EdgeStack *reverseStack = NULL;
     try {
         reverseStack = new EdgeStack(startingNode);
         while (current != NULL) {
-            reverseStack->push(current->getReceivingNode(),
-                               current->getWeight());
+            reverseStack->push(current->getReceivingNode(), current->getWeight());
             current = current->getNextEdge();
         }
     } catch (bad_alloc& e) { throw; }
+    return reverseStack;
+}
+
+void EdgeStack::printCycle() const {
+    // reverse the stack so that the edges are printed in order
+    EdgeStack *reverseStack = NULL;
+    try {
+        reverseStack = this->getReverseStack();
+    } catch (bad_alloc& e) { throw; }
     // then traverse the ordered stack and print it according to the requested format
     cout << "|" << startingNode->getNodeName() << "|";
-    current = reverseStack->getHeadEdge();
+    Edge *current = reverseStack->getHeadEdge();
     while (current != NULL) {
         cout << "->" << current->getWeight() << "->|" << current->getReceivingNode()->getNodeName() << "|";
         current = current->getNextEdge();
@@ -271,7 +278,6 @@ void Node::setVisited(bool visited) {
     Node::visited = visited;
 }
 
-
 void Node::simpleCycleCheck(EdgeStack *visited, bool *foundCycle) {
     if (this->visited) {
         if (this == visited->getStartingNode()) {        // cycle found with startingNode
@@ -286,7 +292,7 @@ void Node::simpleCycleCheck(EdgeStack *visited, bool *foundCycle) {
     Edge *currentEdge = edges->getFirstEdge();
     while (currentEdge != NULL) {
         try {
-            if (! currentEdge->getReceivingNode()->getVisited()) {         // no cycle - check next
+            if (! currentEdge->getReceivingNode()->getVisited()) {         // no cycle - push currentEdge and recursively continue searching
                 this->setVisited(true);
                 visited->push(currentEdge->getReceivingNode(),
                               currentEdge->getWeight());
@@ -294,8 +300,7 @@ void Node::simpleCycleCheck(EdgeStack *visited, bool *foundCycle) {
                 visited->deleteLast();
                 this->setVisited(false);
             } else if (currentEdge->getReceivingNode() == visited->getStartingNode()) {        // cycle found with startingNode
-                visited->push(currentEdge->getReceivingNode(),
-                              currentEdge->getWeight());
+                visited->push(currentEdge->getReceivingNode(), currentEdge->getWeight());
                 if (! *foundCycle) {
                     cout << "Cir-found ";
                     *foundCycle = true;
@@ -362,7 +367,6 @@ void Node::traceflowCheck(EdgeStack *visited, Node *toNode, int len, bool *found
 
 // Graph methods:
 Graph::Graph(int bucketsnum) :  nodesnum(0), bucketsnum(bucketsnum) {
-    collisions = 0;     // TODO del
     try {
         nodeTable = new Node*[bucketsnum]();       // initialize buckets to null
     } catch (bad_alloc& e) {
@@ -385,19 +389,16 @@ Graph::~Graph() {
 
 void Graph::print(std::ostream& outstream) const {
     for (int i = 0; i < bucketsnum; i++) {
-        cout << i << endl;
         Node *current = nodeTable[i];
         while (current != NULL) {
-            outstream << " |" << current->getNodeName() << "|";
+            outstream << "|" << current->getNodeName() << "|";
             current->getEdges()->print(outstream);
             current = current->getNextNode();
         }
     }
-    cout << endl << "Nodes: " << nodesnum << endl;       // TODO del
-    cout << endl << "Collisions: " << collisions << endl;       // TODO del
 }
 
-Node *Graph::getNodeByName(char *nodeName) const {
+Node *Graph::getNodeByName(char *nodeName) const {          // on average O(1)
     unsigned long currentBucket = hashFunc(nodeName) % bucketsnum;
     Node *current = nodeTable[currentBucket];
     while (current != NULL && strcmp(current->getNodeName(), nodeName) != 0) {
@@ -424,24 +425,18 @@ Node *Graph::insertNode(char *nodeName) {        // returns the created node
             return nodeTable[currentBucket];
         } else {        // append in currentBucket after last Node
             prev->setNextNode(new Node(nodeName, NULL));
-            cout << " >> Inserted dup at bucket: " << currentBucket << endl;
             nodesnum++;
-            collisions++;   // TODO del
             return prev->getNextNode();
         }
     } catch (bad_alloc&) { throw; }
 }
 
 void Graph::rehashNodeTable() {
-    cout << "!! REHASHING !!" << endl;
-    cout << " currentNodes: " << nodesnum << endl;
-    cout << " currentBucketsnum: " << bucketsnum << endl;
-    collisions = 0;   // TODO del
     Node **oldNodeTable = nodeTable;
     int oldBucketsnum = bucketsnum;
-    bucketsnum *= 2;
+    bucketsnum *= 2;        // new hash table will be double in size
     try {
-        nodeTable = new Node *[bucketsnum]();       // initialize buckets to null
+        nodeTable = new Node*[bucketsnum]();       // initialize buckets to null
     } catch (bad_alloc& e) {
         cerr << __func__ << ": " << e.what() << endl;
         throw;
@@ -470,21 +465,19 @@ void Graph::insertNodeReference(Node *node) {
         return;
     } else {        // append in currentBucket after last Node
         prev->setNextNode(node);
-        cout << " !>> Rehashing dup at bucket: " << currentBucket << endl;
-        collisions++;   // TODO del
         return;
     }
 }
 
 void Graph::insertEdge(char *fromNodeName, char *toNodeName, int weight) {
     try {
-        Node *toNode = insertNode(toNodeName);
-        if (toNode == NULL) {       // toNode already existed
-            toNode = getNodeByName(toNodeName);
+        Node *toNode = getNodeByName(toNodeName);
+        if (toNode == NULL) {       // toNode doesn't exist - create it
+            toNode = insertNode(toNodeName);
         }
-        Node *fromNode = insertNode(fromNodeName);
-        if (fromNode == NULL) {       // toNode already existed
-            fromNode = getNodeByName(fromNodeName);
+        Node *fromNode = getNodeByName(fromNodeName);
+        if (fromNode == NULL) {       // fromNode doesn't exist - create it
+            fromNode = insertNode(fromNodeName);
         }
         fromNode->getEdges()->insertEdge(toNode, weight);
     } catch (bad_alloc&) { throw; }

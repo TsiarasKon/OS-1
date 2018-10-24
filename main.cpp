@@ -71,15 +71,16 @@ int main(int argc, char *argv[]) {
     char *Ni, *Nj, *weightStr, *strtolEndptr;
     int weight;
     if (inputfilename != NULL) {
-        cout << "Loading graph from inputfile ..." << endl;
+        if (SHOW_EXTRA_UI) cout << "Loading graph from inputfile ..." << endl;
         FILE *inputfp;
         inputfp = fopen(inputfilename, "r");
         if (inputfp == NULL) {
-            cout << "Failed to open inputfile." << endl;
+            if (SHOW_EXTRA_UI) cout << "Failed to open inputfile." << endl;
             cleanup(NULL, &inputfilename, &outputfilename, NULL, &graph);
             return EC_FILE;
         }
         try {
+            // for every line: get Ni, Nj and weight and execute an insertEdge command
             while (getline(&buffer, &bufsize, inputfp) != -1) {
                 if (!strcmp(buffer, "") || !strcmp(buffer, "\n") || !strcmp(buffer, "\r\n")) continue;       // skip empty lines
                 bufferptr = buffer;
@@ -108,7 +109,7 @@ int main(int argc, char *argv[]) {
             return EC_MEM;
         }
         if (feof(inputfp)) {
-            cout << "Loaded graph from inputfile successfully!" << endl << endl;
+            if (SHOW_EXTRA_UI) cout << "Loaded graph from inputfile successfully!" << endl << endl;
         } else {
             cerr << "Encountered an error while reading inputfile." << endl;
             cleanup(inputfp, &inputfilename, &outputfilename, NULL, &graph);
@@ -124,8 +125,9 @@ int main(int argc, char *argv[]) {
         return EC_MEM;
     }
 
+    // Save graph to outputfile
     if (outputfilename != NULL) {
-        cout << "Saving graph to outputfile ..." << endl;
+        if (SHOW_EXTRA_UI) cout << "Saving graph to outputfile ..." << endl;
         ofstream outputfile;
         outputfile.open(outputfilename);
         if (outputfile.is_open()) {
@@ -136,10 +138,14 @@ int main(int argc, char *argv[]) {
             return EC_FILE;
         }
         outputfile.close();
-        cout << "Saved graph to outputfile successfully!" << endl << endl;
+        if (SHOW_EXTRA_UI) cout << "Saved graph to outputfile successfully!" << endl << endl;
     }
 
     cleanup(NULL, &inputfilename, &outputfilename, &bufferptr, &graph);
-    cout << "Program completed successfully!" << endl;
+    if (SHOW_EXTRA_UI) {
+        cout << "Program completed successfully!" << endl;
+    } else {
+        cout << "exit program" << endl;
+    }
     return EC_OK;
 }

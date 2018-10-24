@@ -4,7 +4,7 @@
  * and here: https://github.com/haipome/fnv */
 unsigned long hashFunc(char *str) {
 
-    // djb2
+    /// djb2
 //    unsigned long hash = 5381;
 //    char c;
 //
@@ -14,7 +14,7 @@ unsigned long hashFunc(char *str) {
 //    return hash;
 
 
-    // sdbm
+    /// sdbm
     unsigned long hash = 0;
     char c;
 
@@ -24,7 +24,7 @@ unsigned long hashFunc(char *str) {
     return hash;
 
 
-    // fnv-1_32
+    /// fnv-1_32
 //    unsigned long hval = 16777619;
 //    unsigned char *s = (unsigned char *) str;	/* unsigned string */
 //
@@ -40,7 +40,7 @@ unsigned long hashFunc(char *str) {
 //    return hval;
 
 
-    // fnv-1a_64
+    /// fnv-1a_64
 //    unsigned long hval = 1099511628211;
 //    unsigned char *s = (unsigned char *) str;	/* unsigned string */
 //

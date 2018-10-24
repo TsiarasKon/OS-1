@@ -51,6 +51,7 @@ public:
     Edge *getHeadEdge() const;
     void push(Node *toNode, int weight);
     void deleteLast();
+    EdgeStack *getReverseStack() const;
     void printCycle() const;
 };
 
@@ -75,7 +76,6 @@ public:
 
 class Graph {
     int nodesnum;
-    int collisions;      // TODO del
     int bucketsnum;
     Node **nodeTable;
     void insertNodeReference(Node *node);

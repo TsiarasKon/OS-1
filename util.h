@@ -1,6 +1,7 @@
 #ifndef OS_1_UTIL_H
 #define OS_1_UTIL_H
 
+#define SHOW_EXTRA_UI false
 #define ALLOW_NEGATIVE_WEIGHTS false
 
 enum ErrorCodes {
