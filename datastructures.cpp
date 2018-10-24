@@ -334,29 +334,27 @@ void Node::cyclicTransactionCheck(EdgeStack *visited, int k, bool *foundCycle) {
 }
 
 void Node::traceflowCheck(EdgeStack *visited, Node *toNode, int len, bool *foundTrace) {
-    if (len < 0) return;
+    if (len <= 0) return;
     Edge *currentEdge = edges->getFirstEdge();
     while (currentEdge != NULL) {
-        try {
-            // if already visited edge or currentNode is toNode, circle found
-            if (currentEdge->getVisited() || (visited->getHeadEdge() != NULL && visited->getHeadEdge()->getReceivingNode() == toNode)) {
-                if (visited->getHeadEdge()->getReceivingNode() == toNode) {
-                    if (! *foundTrace) {
+        // if already visited edge, abandon path
+        if (! currentEdge->getVisited()) {
+            try {
+                visited->push(currentEdge->getReceivingNode(), currentEdge->getWeight());
+                currentEdge->setVisited(true);
+                // if currentNode is toNode, trace found
+                if (currentEdge->getReceivingNode() == toNode) {
+                    if (!*foundTrace) {
                         cout << "Tra-found ";
                         *foundTrace = true;
                     }
                     visited->printCycle();
-                    return;
                 }
-            } else {
-                currentEdge->setVisited(true);
-                visited->push(currentEdge->getReceivingNode(),
-                              currentEdge->getWeight());
                 currentEdge->getReceivingNode()->traceflowCheck(visited, toNode, len - 1, foundTrace);
                 visited->deleteLast();
                 currentEdge->setVisited(false);
-            }
-        } catch (bad_alloc &) { throw; }
+            } catch (bad_alloc &) { throw; }
+        }
         currentEdge = currentEdge->getNextEdge();
     }
 }
@@ -561,8 +559,7 @@ void Graph::printReceiving(char *nodeName) const {
     for (int i = 0; i < bucketsnum; i++) {
         Node *current = nodeTable[i];
         while (current != NULL) {
-            current->getEdges()->printTransactionsTo(current->getNodeName(), nodeName,
-                                                     &printed);      // prints and updates flag
+            current->getEdges()->printTransactionsTo(current->getNodeName(), nodeName, &printed);
             current = current->getNextNode();
         }
     }
