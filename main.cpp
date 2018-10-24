@@ -144,8 +144,6 @@ int main(int argc, char *argv[]) {
     cleanup(NULL, &inputfilename, &outputfilename, &bufferptr, &graph);
     if (SHOW_EXTRA_UI) {
         cout << "Program completed successfully!" << endl;
-    } else {
-        cout << "exit program" << endl;
     }
     return EC_OK;
 }

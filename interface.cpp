@@ -85,14 +85,9 @@ void interface(Graph *graph) {
                         } else {
                             res = graph->deleteEdgesWithWeight(Ni, Nj, weight);
                             if (res == 0) {
-                                cout << "Del-vertex |" << Ni << "|->"
-                                     << weightStr << "->|" << Nj << "|"
-                                     << endl;
-                            } else if (res ==
-                                       -3) {     // can only happen if weight was specified
-                                cout << "|" << Ni << "|->" << weightStr
-                                     << "->|" << Nj
-                                     << "| does not exist - abort-l;" << endl;
+                                cout << "Del-vertex |" << Ni << "|->" << weightStr << "->|" << Nj << "|" << endl;
+                            } else if (res == -3) {     // can only happen if weight was specified
+                                cout << "|" << Ni << "|->" << weightStr << "->|" << Nj << "| does not exist - abort-l;" << endl;
                             }
                         }
                     }
@@ -119,17 +114,13 @@ void interface(Graph *graph) {
                     } else {
                         int res = graph->modifyEdge(Ni, Nj, weight, nweight);
                         if (res == 0) {
-                            cout << "Mod-vertex |" << Ni << "|->" << nweight
-                                 << "->|" << Nj << "|" << endl;
+                            cout << "Mod-vertex |" << Ni << "|->" << nweight << "->|" << Nj << "|" << endl;
                         } else if (res == -1) {
-                            cout << "|" << Ni << "| does not exist - abort-m;"
-                                 << endl;
+                            cout << "|" << Ni << "| does not exist - abort-m;" << endl;
                         } else if (res == -2) {
-                            cout << "|" << Nj << "| does not exist - abort-m;"
-                                 << endl;
+                            cout << "|" << Nj << "| does not exist - abort-m;" << endl;
                         } else if (res == -3) {
-                            cout << "|" << Ni << "|->" << weightStr << "->|"
-                                 << Nj << "| does not exist - abort-m;" << endl;
+                            cout << "|" << Ni << "|->" << weightStr << "->|" << Nj << "| does not exist - abort-m;" << endl;
                         }
                     }
                 }
@@ -194,7 +185,7 @@ void interface(Graph *graph) {
                 cout << " 'h' - print the list you're seeing right now" << endl;
                 cout << " 'e' - exit" << endl;
             } else if (!strcmp(command, "e")) {
-                cout << endl;
+                cout << "exit program" << endl;
                 free(bufferptr);
                 return;
             } else {

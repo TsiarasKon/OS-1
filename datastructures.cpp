@@ -8,7 +8,7 @@ using namespace std;
 
 // EdgeListNode methods:
 Edge::Edge(Node *receivingNode, int weight, Edge *nextEdge) :
-        receivingNode(receivingNode), weight(weight), nextEdge(nextEdge), visited(false) {}
+        receivingNode(receivingNode), weight(weight), visited(false), nextEdge(nextEdge) {}
 
 Edge::~Edge() {}
 
@@ -61,7 +61,7 @@ void EdgeList::print(std::ostream& outstream) const {
     Edge *current = firstEdge;
     outstream << endl;
     while (current != NULL) {
-        outstream << " -" << current->getWeight() << "->|" << current->getReceivingNode()->getNodeName() << "|" << endl;
+        outstream << "  -" << current->getWeight() << "->|" << current->getReceivingNode()->getNodeName() << "|" << endl;
         current = current->getNextEdge();
     }
     outstream << endl;
@@ -236,8 +236,7 @@ void EdgeStack::printCycle() const {
 
 
 // Node methods:
-Node::Node(char *nodeName, Node *nextNode) :
-        nextNode(nextNode), visited(false) {
+Node::Node(char *nodeName, Node *nextNode) : visited(false), nextNode(nextNode) {
     try {
         this->nodeName = new char[strlen(nodeName) + 1];
         strcpy(this->nodeName, nodeName);
@@ -294,8 +293,7 @@ void Node::simpleCycleCheck(EdgeStack *visited, bool *foundCycle) {
         try {
             if (! currentEdge->getReceivingNode()->getVisited()) {         // no cycle - push currentEdge and recursively continue searching
                 this->setVisited(true);
-                visited->push(currentEdge->getReceivingNode(),
-                              currentEdge->getWeight());
+                visited->push(currentEdge->getReceivingNode(), currentEdge->getWeight());
                 currentEdge->getReceivingNode()->simpleCycleCheck(visited, foundCycle);
                 visited->deleteLast();
                 this->setVisited(false);
@@ -441,6 +439,7 @@ void Graph::rehashNodeTable() {
         cerr << __func__ << ": " << e.what() << endl;
         throw;
     }
+    // transfer ever node from oldNodeTable to their appropriate position nodeTable
     for (int i = 0; i < oldBucketsnum; i++) {
         Node *current = oldNodeTable[i], *next;
         while (current != NULL) {
