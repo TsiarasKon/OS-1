@@ -158,11 +158,9 @@ void EdgeList::printTransactionsTo(char *fromNodeName, char *toNodeName, bool *p
     }
     while (current != NULL && current->getReceivingNode() != NULL && !strcmp(current->getReceivingNode()->getNodeName(), toNodeName)) {
         if (! *printed) {
-            cout << " Rec-edges";
-        } else {
-            cout << "          ";
+            cout << "Rec-edges ";
         }
-        cout << " |" << fromNodeName << "|->" << current->getWeight() << "->|" <<
+        cout << "|" << fromNodeName << "|->" << current->getWeight() << "->|" <<
              toNodeName << "|" << endl;
         *printed = true;
         current = current->getNextEdge();
@@ -274,18 +272,16 @@ void Node::setVisited(bool visited) {
 }
 
 
-bool Node::simpleCycleCheck(EdgeStack *visited) {
-    bool foundCycle = false;
+void Node::simpleCycleCheck(EdgeStack *visited, bool *foundCycle) {
     if (this->visited) {
         if (this == visited->getStartingNode()) {        // cycle found with startingNode
-            if (! foundCycle) {     // TODO: rec carry foundCycle
-                cout << " Cir-found ";
-                foundCycle = true;
+            if (! *foundCycle) {
+                cout << "Cir-found ";
+                *foundCycle = true;
             }
             visited->printCycle();
-            return true;
         }
-        return false;
+        return;
     }
     Edge *currentEdge = edges->getFirstEdge();
     while (currentEdge != NULL) {
@@ -294,16 +290,15 @@ bool Node::simpleCycleCheck(EdgeStack *visited) {
                 this->setVisited(true);
                 visited->push(currentEdge->getReceivingNode(),
                               currentEdge->getWeight());
-                foundCycle = currentEdge->getReceivingNode()->simpleCycleCheck(
-                        visited) || foundCycle;
+                currentEdge->getReceivingNode()->simpleCycleCheck(visited, foundCycle);
                 visited->deleteLast();
                 this->setVisited(false);
             } else if (currentEdge->getReceivingNode() == visited->getStartingNode()) {        // cycle found with startingNode
                 visited->push(currentEdge->getReceivingNode(),
                               currentEdge->getWeight());
-                if (! foundCycle) {     // TODO: rec carry foundCycle
-                    cout << " Cir-found ";
-                    foundCycle = true;
+                if (! *foundCycle) {
+                    cout << "Cir-found ";
+                    *foundCycle = true;
                 }
                 visited->printCycle();
                 visited->deleteLast();
@@ -311,11 +306,9 @@ bool Node::simpleCycleCheck(EdgeStack *visited) {
         } catch (bad_alloc&) { throw; }
         currentEdge = currentEdge->getNextEdge();
     }
-    return foundCycle;
 }
 
-bool Node::cyclicTransactionCheck(EdgeStack *visited, int k) {
-    bool foundCycle = false;
+void Node::cyclicTransactionCheck(EdgeStack *visited, int k, bool *foundCycle) {
     Edge *currentEdge = edges->getFirstEdge();
     while (currentEdge != NULL) {
         // if weight is less than k or currentEdge has already been visited, abandon path
@@ -325,46 +318,47 @@ bool Node::cyclicTransactionCheck(EdgeStack *visited, int k) {
                 currentEdge->setVisited(true);
                 // if currentNode is the same as the starting one, circle found
                 if (currentEdge->getReceivingNode() == visited->getStartingNode()) {
-                    cout << " Cir-found ";
+                    if (! *foundCycle) {
+                        cout << "Cir-found ";
+                        *foundCycle = true;
+                    }
                     visited->printCycle();
-                    foundCycle = true;
                 }
-                foundCycle = currentEdge->getReceivingNode()->cyclicTransactionCheck(visited, k) || foundCycle;
+                currentEdge->getReceivingNode()->cyclicTransactionCheck(visited, k, foundCycle);
                 visited->deleteLast();
                 currentEdge->setVisited(false);
             } catch (bad_alloc &) { throw; }
         }
         currentEdge = currentEdge->getNextEdge();
     }
-    return foundCycle;
 }
 
-bool Node::traceflowCheck(EdgeStack *visited, Node *toNode, int len) {
-    if (len < 0) return false;
-    bool foundCycle = false;
+void Node::traceflowCheck(EdgeStack *visited, Node *toNode, int len, bool *foundTrace) {
+    if (len < 0) return;
     Edge *currentEdge = edges->getFirstEdge();
     while (currentEdge != NULL) {
         try {
             // if already visited edge or currentNode is toNode, circle found
             if (currentEdge->getVisited() || (visited->getHeadEdge() != NULL && visited->getHeadEdge()->getReceivingNode() == toNode)) {
                 if (visited->getHeadEdge()->getReceivingNode() == toNode) {
-                    cout << " Tra-found ";
+                    if (! *foundTrace) {
+                        cout << "Tra-found ";
+                        *foundTrace = true;
+                    }
                     visited->printCycle();
-                    return true;
+                    return;
                 }
             } else {
                 currentEdge->setVisited(true);
                 visited->push(currentEdge->getReceivingNode(),
                               currentEdge->getWeight());
-                foundCycle =
-                        currentEdge->getReceivingNode()->traceflowCheck(visited, toNode, len - 1) || foundCycle;
+                currentEdge->getReceivingNode()->traceflowCheck(visited, toNode, len - 1, foundTrace);
                 visited->deleteLast();
                 currentEdge->setVisited(false);
             }
         } catch (bad_alloc &) { throw; }
         currentEdge = currentEdge->getNextEdge();
     }
-    return foundCycle;
 }
 
 
@@ -560,7 +554,7 @@ int Graph::modifyEdge(char *fromName, char *toNodeName, int weight, int nweight)
 void Graph::printReceiving(char *nodeName) const {
     Node *toNode = getNodeByName(nodeName);
     if (toNode == NULL) {
-        cout << " |" << nodeName << "| does not exist - abort-r;" << endl;
+        cout << "|" << nodeName << "| does not exist - abort-r;" << endl;
         return;
     }
     bool printed = false;
@@ -573,59 +567,65 @@ void Graph::printReceiving(char *nodeName) const {
         }
     }
     if (!printed) {
-        cout << " No-rec-edges |" << nodeName << "|" << endl;
+        cout << "No-rec-edges " << nodeName << endl;
     }
 }
 
 void Graph::circlefind(char *nodeName) const {
     Node *node = getNodeByName(nodeName);
     if (node == NULL) {
-        cout << " |" << nodeName << "| does not exist - abort-c;" << endl;
+        cout << "|" << nodeName << "| does not exist - abort-c;" << endl;
         return;
     }
-    EdgeStack *visited;
+    EdgeStack *visited = NULL;
+    bool foundCycle = false;
     try {
         visited = new EdgeStack(node);
-        if (!node->simpleCycleCheck(visited)) {
-            cout << " No-circle-found |" << nodeName << "|" << endl;
-        }
+        node->simpleCycleCheck(visited, &foundCycle);
     } catch (bad_alloc&) { throw; }
+    if (! foundCycle) {
+        cout << "No-circle-found |" << nodeName << "|" << endl;
+    }
     delete visited;
 }
 
 void Graph::findcircles(char *nodeName, int k) const {
     Node *node = getNodeByName(nodeName);
     if (node == NULL) {
-        cout << " |" << nodeName << "| does not exist - abort-f;" << endl;
+        cout << "|" << nodeName << "| does not exist - abort-f;" << endl;
         return;
     }
-    EdgeStack *visited;
+    EdgeStack *visited = NULL;
+    bool foundCycle = false;
     try {
         visited = new EdgeStack(node);
-        if (!node->cyclicTransactionCheck(visited, k)) {
-            cout << " No-circle-found invloving |" << nodeName << "| " << k << endl;
-        }
+        node->cyclicTransactionCheck(visited, k, &foundCycle);
     } catch (bad_alloc&) { throw; }
+    if (! foundCycle) {
+        cout << "No-circle-found invloving |" << nodeName << "| " << k << endl;
+    }
     delete visited;
 }
 
 void Graph::traceflow(char *fromNodeName, char *toNodeName, int len) const {
     Node *fromNode = getNodeByName(fromNodeName);
     if (fromNode == NULL) {
-        cout << " |" << fromNodeName << "| does not exist - abort-t;" << endl;
+        cout << "|" << fromNodeName << "| does not exist - abort-t;" << endl;
         return;
     }
     Node *toNode = getNodeByName(toNodeName);
     if (toNode == NULL) {
-        cout << " |" << toNodeName << "| does not exist - abort-t;" << endl;
+        cout << "|" << toNodeName << "| does not exist - abort-t;" << endl;
         return;
     }
-    EdgeStack *visited;
+    EdgeStack *visited = NULL;
+    bool foundTrace = false;
     try {
         visited = new EdgeStack(fromNode);
-        if (!fromNode->traceflowCheck(visited, toNode, len)) {
-            cout << " No-trace from |" << fromNodeName << "| to |" << toNodeName << "|" << endl;
-        }
+        fromNode->traceflowCheck(visited, toNode, len, &foundTrace);
     } catch (bad_alloc&) { throw; }
+    if (! foundTrace) {
+        cout << "No-trace from |" << fromNodeName << "| to |" << toNodeName << "|" << endl;
+    }
     delete visited;
 }

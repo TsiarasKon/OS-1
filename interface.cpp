@@ -12,12 +12,12 @@ void interface(Graph *graph) {
     char *buffer = NULL, *bufferptr = NULL;
     char *Ni, *Nj, *weightStr, *command, *strtolEndptr;
     int weight;
-    const char cmdGenericErrorMsg[] = " Invalid command format - Type \"h\" for the correct format\n";
+    const char cmdGenericErrorMsg[] = "(!) Invalid command format - Type \"h\" for the correct format\n";
     const char *cmdWeightErrorMsg;
     if (ALLOW_NEGATIVE_WEIGHTS) {
-        cmdWeightErrorMsg = " Invalid command format: Weight must be an integer\n";
+        cmdWeightErrorMsg = "(!) Invalid command format: Weight must be an integer\n";
     } else {
-        cmdWeightErrorMsg = " Invalid command format: Weight must be a non-negative integer\n";
+        cmdWeightErrorMsg = "(!) Invalid command format: Weight must be a non-negative integer\n";
     }
     cout << "Type a command: ";
     try {
@@ -32,9 +32,9 @@ void interface(Graph *graph) {
                     cout << cmdGenericErrorMsg;
                 } else {
                     if (graph->insertNode(Ni) != NULL) {
-                        cout << " Inserted |" << Ni << "|" << endl;
+                        cout << "Inserted |" << Ni << "|" << endl;
                     } else {
-                        cout << " Node |" << Ni << "| Exists;" << endl;
+                        cout << "Node |" << Ni << "| Exists;" << endl;
                     }
                 }
             } else if (!strcmp(command, "n")) {
@@ -49,7 +49,7 @@ void interface(Graph *graph) {
                         cout << cmdWeightErrorMsg;
                     } else {
                         graph->insertEdge(Ni, Nj, weight);
-                        cout << " Inserted |" << Ni << "|->" << weightStr << "->|" << Nj << "|" << endl;
+                        cout << "Inserted |" << Ni << "|->" << weightStr << "->|" << Nj << "|" << endl;
                     }
                 }
             } else if (!strcmp(command, "d")) {
@@ -58,9 +58,9 @@ void interface(Graph *graph) {
                     cout << cmdGenericErrorMsg;
                 } else {
                     if (graph->deleteNode(Ni)) {
-                        cout << " Deleted |" << Ni << "|" << endl;
+                        cout << "Deleted |" << Ni << "|" << endl;
                     } else {
-                        cout << " Node |" << Ni << "| does not exist - abort-d;" << endl;
+                        cout << "Node |" << Ni << "| does not exist - abort-d;" << endl;
                     }
                 }
             } else if (!strcmp(command, "l")) {
@@ -74,9 +74,9 @@ void interface(Graph *graph) {
                     if (weightStr == NULL) {
                         res = graph->deleteAllEdges(Ni, Nj);
                         if (res == 0) {
-                            cout << " Del-all |" << Ni << "|--->|" << Nj << "|" << endl;
+                            cout << "Del-all |" << Ni << "|--->|" << Nj << "|" << endl;
                         } else if (res == -3) {
-                            cout << " No |" << Ni << "|--->|" << Nj << "| exists - abort-l;" << endl;
+                            cout << "No |" << Ni << "|--->|" << Nj << "| exists - abort-l;" << endl;
                         }
                     } else {
                         weight = (int) strtol(weightStr, &strtolEndptr, 10);
@@ -85,21 +85,21 @@ void interface(Graph *graph) {
                         } else {
                             res = graph->deleteEdgesWithWeight(Ni, Nj, weight);
                             if (res == 0) {
-                                cout << " Del-vertex |" << Ni << "|->"
+                                cout << "Del-vertex |" << Ni << "|->"
                                      << weightStr << "->|" << Nj << "|"
                                      << endl;
                             } else if (res ==
                                        -3) {     // can only happen if weight was specified
-                                cout << " |" << Ni << "|->" << weightStr
+                                cout << "|" << Ni << "|->" << weightStr
                                      << "->|" << Nj
                                      << "| does not exist - abort-l;" << endl;
                             }
                         }
                     }
                     if (res == -1) {
-                        cout << " |" << Ni << "| does not exist - abort-l;" << endl;
+                        cout << "|" << Ni << "| does not exist - abort-l;" << endl;
                     } else if (res == -2) {
-                        cout << " |" << Nj << "| does not exist - abort-l;" << endl;
+                        cout << "|" << Nj << "| does not exist - abort-l;" << endl;
                     }
                 }
             } else if (!strcmp(command, "m")) {
@@ -119,16 +119,16 @@ void interface(Graph *graph) {
                     } else {
                         int res = graph->modifyEdge(Ni, Nj, weight, nweight);
                         if (res == 0) {
-                            cout << " Mod-vertex |" << Ni << "|->" << nweight
+                            cout << "Mod-vertex |" << Ni << "|->" << nweight
                                  << "->|" << Nj << "|" << endl;
                         } else if (res == -1) {
-                            cout << " |" << Ni << "| does not exist - abort-m;"
+                            cout << "|" << Ni << "| does not exist - abort-m;"
                                  << endl;
                         } else if (res == -2) {
-                            cout << " |" << Nj << "| does not exist - abort-m;"
+                            cout << "|" << Nj << "| does not exist - abort-m;"
                                  << endl;
                         } else if (res == -3) {
-                            cout << " |" << Ni << "|->" << weightStr << "->|"
+                            cout << "|" << Ni << "|->" << weightStr << "->|"
                                  << Nj << "| does not exist - abort-m;" << endl;
                         }
                     }
@@ -169,7 +169,7 @@ void interface(Graph *graph) {
                 } else {
                     int len = (int) strtol(lenStr, &strtolEndptr, 10);
                     if (*strtolEndptr != '\0' || len <= 0) {
-                        cout << " Invalid command format: l must be a positive integer" << endl;
+                        cout << "(!) Invalid command format: l must be a positive integer" << endl;
                     } else {
                         graph->traceflow(Ni, Nj, len);
                     }
@@ -177,28 +177,28 @@ void interface(Graph *graph) {
             } else if (!strcmp(command, "p")) {         // bonus: p(rint) command
                 graph->print(cout);
             } else if (!strcmp(command, "h")) {         // bouns: h(elp) command
-                cout << " Available commands (use without quotes):" << endl;
-                cout << "  'i Ni' - insert a new node Ni" << endl;
-                cout << "  'n Ni Nj w' - insert a new edge from Ni to Nj with weight w" << endl;
-                cout << "  'd Ni' - delete node Ni (as well as all its edges)" << endl;
-                cout << "  'l Ni Nj [w]' - delete an edge from Ni to Nj with weight w;" << endl
-                     << "  \tif w is not provided then delete all such edges regardless of weight" << endl;
-                cout << "  'm Ni Nj w nw' - modify an edge from Ni to Nj with weight w to have weight nw" << endl;
-                cout << "  'r Ni' - print all incoming transactions to node Ni" << endl;
-                cout << "  'c Ni' - print all simple cycles in which Ni appears" << endl;
-                cout << "  'f Ni k' - print all simple cycles in which Ni appears and each edge has at least weight k"
+                cout << "Available commands (use without quotes):" << endl;
+                cout << " 'i Ni' - insert a new node Ni" << endl;
+                cout << " 'n Ni Nj w' - insert a new edge from Ni to Nj with weight w" << endl;
+                cout << " 'd Ni' - delete node Ni (as well as all its edges)" << endl;
+                cout << " 'l Ni Nj [w]' - delete an edge from Ni to Nj with weight w;" << endl
+                     << " \tif w is not provided then delete all such edges regardless of weight" << endl;
+                cout << " 'm Ni Nj w nw' - modify an edge from Ni to Nj with weight w to have weight nw" << endl;
+                cout << " 'r Ni' - print all incoming transactions to node Ni" << endl;
+                cout << " 'c Ni' - print all simple cycles in which Ni appears" << endl;
+                cout << " 'f Ni k' - print all simple cycles in which Ni appears and each edge has at least weight k"
                      << endl;
-                cout << "  't Ni Nj l' - print all possible transaction flows from Ni to Nj traversing at most l edges"
+                cout << " 't Ni Nj l' - print all possible transaction flows from Ni to Nj traversing at most l edges"
                      << endl;
-                cout << "  'p' - pretty print the current graph" << endl;
-                cout << "  'h' - print the list you're seeing right now" << endl;
-                cout << "  'e' - exit" << endl;
+                cout << " 'p' - pretty print the current graph" << endl;
+                cout << " 'h' - print the list you're seeing right now" << endl;
+                cout << " 'e' - exit" << endl;
             } else if (!strcmp(command, "e")) {
                 cout << endl;
                 free(bufferptr);
                 return;
             } else {
-                cout << " Unknown command - Type \"h\" for a list of available commands;" << endl;
+                cout << "(!) Unknown command - Type \"h\" for a list of available commands;" << endl;
             }
             buffer = bufferptr;     // used to avoid memory leaks due to strtok()
             cout << endl << "Type a command: ";

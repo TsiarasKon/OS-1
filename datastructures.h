@@ -68,9 +68,9 @@ public:
     void setNextNode(Node *nextNode);
     bool getVisited() const;
     void setVisited(bool visited);
-    bool simpleCycleCheck(EdgeStack *visited);
-    bool cyclicTransactionCheck(EdgeStack *visited, int weight);
-    bool traceflowCheck(EdgeStack *visited, Node *toNode, int len);
+    void simpleCycleCheck(EdgeStack *visited, bool *foundCycle);
+    void cyclicTransactionCheck(EdgeStack *visited, int weight, bool *foundCycle);
+    void traceflowCheck(EdgeStack *visited, Node *toNode, int len, bool *foundTrace);
 };
 
 class Graph {
